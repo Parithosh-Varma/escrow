@@ -43,7 +43,6 @@ contract DecentralizedEscrow is ReentrancyGuard {
     uint256 public constant MIN_DURATION = 1 hours;
     uint256 public constant MAX_DURATION = 365 days;
     uint256 public constant DISPUTE_COOLDOWN = 24 hours;
-    uint256 public disputeRateLimit;
     bool public paused;
 
     uint256 public escrowCount;
@@ -161,6 +160,13 @@ contract DecentralizedEscrow is ReentrancyGuard {
     function removeArbiter(address arbiter) external onlyAdmin {
         require(arbiters[arbiter].isApproved, "Escrow: not arbiter");
         arbiters[arbiter].isApproved = false;
+        for (uint256 i = 0; i < arbiterList.length; i++) {
+            if (arbiterList[i] == arbiter) {
+                arbiterList[i] = arbiterList[arbiterList.length - 1];
+                arbiterList.pop();
+                break;
+            }
+        }
         emit ArbiterRemoved(arbiter);
     }
 
