@@ -1,7 +1,7 @@
 node_modules/
 artifacts/
 cache/
-deployments/
+/deployments/
 typechain-types/
 typechain/
 .env
