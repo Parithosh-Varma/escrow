@@ -6,11 +6,20 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+/**
+ * @title DecentralizedEscrow
+ * @author Parithosh Varma
+ * @notice Trustless multi-party escrow with dispute resolution, timeout refunds, and arbiter registry
+ * @dev Supports native ETH and ERC-20, uses ReentrancyGuard + SafeERC20 + CEI pattern
+ * @custom:security-contact demgufever@gmail.com
+ */
 contract DecentralizedEscrow is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
+    /// @notice Lifecycle states for an escrow
     enum EscrowStatus { Pending, Funded, Completed, Disputed, Refunded }
 
+    /// @notice Core escrow data stored per escrowId
     struct Escrow {
         address buyer;
         address seller;
@@ -28,6 +37,7 @@ contract DecentralizedEscrow is ReentrancyGuard {
         address resolver; // who resolved the dispute
     }
 
+    /// @notice Whitelisted arbiter metadata
     struct Arbiter {
         bool isApproved;
         uint256 reputation;
