@@ -549,6 +549,25 @@ contract DecentralizedEscrow is ReentrancyGuard {
         admin = newAdmin;
     }
 
+    // ---- View Helpers ----
+
+    /// @notice Returns full escrow details for off-chain queries
+    function getEscrowDetails(uint256 escrowId) external view validEscrow(escrowId) returns (Escrow memory) {
+        return escrows[escrowId];
+    }
+
+    /// @notice Check if an escrow has passed its expiration
+    function isExpired(uint256 escrowId) external view validEscrow(escrowId) returns (bool) {
+        return block.timestamp >= escrows[escrowId].expiration;
+    }
+
+    /// @notice Preview fee and payout for a given escrow
+    function getFeePreview(uint256 escrowId) external view validEscrow(escrowId) returns (uint256 fee, uint256 payout) {
+        Escrow storage e = escrows[escrowId];
+        fee = (e.amount * e.feePercent) / 10000;
+        payout = e.amount - fee;
+    }
+
     receive() external payable {
         revert("Escrow: no direct ETH");
     }
