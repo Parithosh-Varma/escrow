@@ -1,14 +1,29 @@
 {
-  "name": "escrow",
+  "name": "decentralized-escrow",
   "version": "1.0.0",
+  "description": "Trustless multi-party escrow smart contract for EVM chains - ETH & ERC20, arbiter disputes, timeout refunds",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "npx hardhat test",
+    "test:gas": "REPORT_GAS=true npx hardhat test",
+    "coverage": "npx hardhat coverage",
+    "compile": "npx hardhat compile",
+    "node": "npx hardhat node",
+    "deploy:local": "npx hardhat run scripts/deploy.js --network localhost",
+    "deploy:sepolia": "npx hardhat run scripts/deploy.js --network sepolia"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "keywords": [
+    "solidity",
+    "escrow",
+    "ethereum",
+    "hardhat",
+    "openzeppelin",
+    "erc20",
+    "smart-contract",
+    "defi"
+  ],
+  "author": "Parithosh-Varma <demgufever@gmail.com>",
+  "license": "MIT",
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.8",
     "@nomicfoundation/hardhat-ethers": "^3.0.8",
