@@ -3,7 +3,14 @@ artifacts/
 cache/
 deployments/
 typechain-types/
+typechain/
 .env
 coverage/
 coverage.json
 .DS_Store
+*.log
+npm-debug.log*
+.cache/
+dist/
+.env.local
+deployments/localhost.json
