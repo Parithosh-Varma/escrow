@@ -13,6 +13,10 @@ function loadDotEnv(path = ".env") {
         (val.startsWith("'") && val.endsWith("'"))
       ) {
         val = val.slice(1, -1);
+      } else {
+        // strip inline comments from unquoted values
+        const hashIdx = val.indexOf("#");
+        if (hashIdx !== -1) val = val.slice(0, hashIdx).trimEnd();
       }
       if (!(m[1] in process.env)) process.env[m[1]] = val;
     }
