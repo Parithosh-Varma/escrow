@@ -4,7 +4,18 @@ import { ethers } from "ethers";
 import DecentralizedEscrowABI from "./DecentralizedEscrowABI.json";
 
 class EscrowSDK {
+  static STATUS_LABELS = ["Pending", "Funded", "Completed", "Disputed", "Refunded"];
+
+  static isValidAddress(addr) {
+    try { return ethers.isAddress(addr); } catch { return false; }
+  }
+
+  static formatStatus(statusBigInt) {
+    return EscrowSDK.STATUS_LABELS[Number(statusBigInt)] || "Unknown";
+  }
+
   constructor(contractAddress, signerOrProvider) {
+    if (!EscrowSDK.isValidAddress(contractAddress)) throw new Error("EscrowSDK: invalid contract address");
     this.contract = new ethers.Contract(
       contractAddress,
       DecentralizedEscrowABI,
@@ -15,6 +26,9 @@ class EscrowSDK {
   // ---- Escrow Creation ----
 
   async createEscrow(seller, arbiter, token, amount, expiration, feePercent = 0) {
+    if (!EscrowSDK.isValidAddress(seller)) throw new Error("createEscrow: invalid seller");
+    if (arbiter && arbiter !== ethers.ZeroAddress && !EscrowSDK.isValidAddress(arbiter)) throw new Error("createEscrow: invalid arbiter");
+    if (amount == null || amount <= 0n) throw new Error("createEscrow: invalid amount");
     const tx = await this.contract.createEscrow(
       seller,
       arbiter,
@@ -155,6 +169,36 @@ class EscrowSDK {
     };
   }
 
+  async isExpired(escrowId) {
+    return await this.contract.isExpired(escrowId);
+  }
+
+  async getFeePreview(escrowId) {
+    const [fee, payout] = await this.contract.getFeePreview(escrowId);
+    return { fee, payout };
+  }
+
+  async getEscrowDetails(escrowId) {
+    const e = await this.contract.getEscrowDetails(escrowId);
+    return {
+      buyer: e.buyer,
+      seller: e.seller,
+      arbiter: e.arbiter,
+      token: e.token,
+      amount: e.amount,
+      feePercent: e.feePercent,
+      createdAt: Number(e.createdAt),
+      expiration: Number(e.expiration),
+      status: EscrowSDK.formatStatus(e.status),
+      statusRaw: Number(e.status),
+      buyerConfirmed: e.buyerConfirmed,
+      sellerConfirmed: e.sellerConfirmed,
+      disputeCount: Number(e.disputeCount),
+      lastDisputeTime: Number(e.lastDisputeTime),
+      resolver: e.resolver,
+    };
+  }
+
   // ---- Admin ----
 
   async pause() {
@@ -235,6 +279,18 @@ class EscrowSDK {
         resolution: statusMap[Number(status)],
         resolver,
       });
+    });
+  }
+
+  onEscrowRefunded(callback) {
+    this.contract.on("EscrowRefunded", (escrowId, amount) => {
+      callback({ escrowId: escrowId.toString(), amount });
+    });
+  }
+
+  onFundsDeposited(callback) {
+    this.contract.on("FundsDeposited", (escrowId, depositor, amount) => {
+      callback({ escrowId: escrowId.toString(), depositor, amount });
     });
   }
 
