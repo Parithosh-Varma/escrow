@@ -1,9 +1,11 @@
 require("@nomicfoundation/hardhat-ethers");
 require("@nomicfoundation/hardhat-chai-matchers");
-require("@nomicfoundation/hardhat-verify");
-require("hardhat-gas-reporter");
-require("solidity-coverage");
 require("dotenv").config();
+
+// Optional plugins — wrapped to stay compatible with Node 24 / Hardhat 2.22
+try { require("@nomicfoundation/hardhat-verify"); } catch (e) { /* verify optional */ }
+try { require("hardhat-gas-reporter"); } catch (e) { /* gas reporter optional */ }
+try { require("solidity-coverage"); } catch (e) { /* coverage optional */ }
 
 const { PRIVATE_KEY, SEPOLIA_RPC_URL, POLYGON_RPC_URL, ARBITRUM_RPC_URL, OPTIMISM_RPC_URL, ETHERSCAN_API_KEY } = process.env;
 
