@@ -1,0 +1,20 @@
+stateDiagram-v2
+    [*] --> created
+    created --> funded : fund
+    created --> cancelled : cancel (forbidden → dispute)
+    funded --> in_progress : start
+    funded --> disputed : cancellation dispute
+    in_progress --> submitted : submit
+    in_progress --> disputed : dispute
+    submitted --> approved : approve (full or partial)
+    submitted --> auto_released : timeout (permissionless)
+    submitted --> disputed : dispute
+    approved --> closed : closed
+    approved --> disputed : contest partial remainder
+    auto_released --> closed : closed
+    disputed --> resolved : resolution
+    resolved --> closed : closed
+    resolved --> in_progress : restart
+    resolved --> submitted : resubmit
+    closed --> [*]
+    cancelled --> [*]

@@ -1,0 +1,29 @@
+flowchart TB
+    S["Freelancer submits<br/>multipart delivery"] --> D{"Deliverable<br/>count = 1?"}
+    D -- No --> R["Reject: need exactly 1 deliverable"]
+    D -- Yes --> SR{"Screen recordings<br/>≥ 1?"}
+    SR -- No --> R2["Reject: need ≥ 1 recording"]
+    SR -- Yes --> PF{"Process files<br/>≥ 1?"}
+    PF -- No --> R3["Reject: need ≥ 1 process file"]
+    PF -- Yes --> AI["Run AI checks sequentially"]
+
+    AI --> C1["requirement_match<br/>(Hive: relevance)"]
+    AI --> C2["plagiarism<br/>(Hive: plagiarism)"]
+    AI --> C3["ai_generation<br/>(GPTZero)"]
+
+    C1 --> F{"Any flagged?<br/>confidence ≥ 0.7"}
+    C2 --> F
+    C3 --> F
+
+    F -- Yes --> DIS["Auto-open ai_flag dispute<br/>raised by system:ai"]
+    F -- No --> OK["ai_status = clean"]
+    DIS --> SUB["Submission accepted<br/>(dispute runs in parallel)"]
+    OK --> SUB
+
+    style S fill:#e0e7ff,stroke:#4f46e5
+    style SUB fill:#dcfce7,stroke:#16a34a
+    style DIS fill:#fef3c7,stroke:#d97706
+    style R fill:#fee2e2,stroke:#dc2626
+    style R2 fill:#fee2e2,stroke:#dc2626
+    style R3 fill:#fee2e2,stroke:#dc2626
+    style AI fill:#f3e8ff,stroke:#9333ea

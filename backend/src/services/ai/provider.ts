@@ -30,6 +30,8 @@ export interface AiCheckProvider {
   run(input: CheckInput): Promise<CheckResult>;
 }
 
+const FLAG_THRESHOLD = 0.7;
+
 class NullProvider implements AiCheckProvider {
   name = "null";
   async run(input: CheckInput): Promise<CheckResult> {
@@ -42,32 +44,152 @@ class NullProvider implements AiCheckProvider {
   }
 }
 
-/** GPTZero-style text AI-detection stub. Wire real endpoint when key present. */
+/** GPTZero-style text AI-detection via their v2 predict endpoint. */
 class GptZeroStyleProvider implements AiCheckProvider {
   name = "gptzero-style";
   constructor(private apiKey: string) {}
+
   async run(input: CheckInput): Promise<CheckResult> {
-    // TODO(phase-integration): POST text to detector API, map response to confidence.
-    return {
-      provider: this.name,
-      confidence: 0,
-      flagged: false,
-      raw: { note: "provider wired but remote call not implemented", hasKey: true }
-    };
+    if (!input.deliverableText) {
+      return {
+        provider: this.name,
+        confidence: 0,
+        flagged: false,
+        raw: { note: "no text content provided for AI detection" }
+      };
+    }
+
+    try {
+      const res = await fetch("https://api.gptzero.me/v2/predict/text", {
+        method: "POST",
+        headers: {
+          "x-api-key": this.apiKey,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ document: input.deliverableText }),
+        signal: AbortSignal.timeout(30_000)
+      });
+
+      if (!res.ok) {
+        const body = await res.text().catch(() => "");
+        console.error("[ai] gptzero HTTP %d: %s", res.status, body.slice(0, 200));
+        return {
+          provider: this.name,
+          confidence: 0,
+          flagged: false,
+          raw: { error: `HTTP ${res.status}`, body: body.slice(0, 500) }
+        };
+      }
+
+      const data = await res.json() as {
+        documents?: Array<{
+          confidence?: { ai_generated?: number; human_generated?: number };
+          overall_exported_category_result?: string;
+        }>;
+      };
+
+      const doc = data.documents?.[0];
+      const aiConf = doc?.confidence?.ai_generated ?? 0;
+      const confidence = typeof aiConf === "number" ? Math.min(1, Math.max(0, aiConf)) : 0;
+
+      return {
+        provider: this.name,
+        confidence,
+        flagged: confidence >= FLAG_THRESHOLD,
+        raw: {
+          category: doc?.overall_exported_category_result,
+          confidence: doc?.confidence
+        }
+      };
+    } catch (err) {
+      console.error("[ai] gptzero call failed:", err);
+      return {
+        provider: this.name,
+        confidence: 0,
+        flagged: false,
+        raw: { error: String(err) }
+      };
+    }
   }
 }
 
-/** Hive-style image/video AI-detection + Originality-style plagiarism stub. */
+/** Hive-style image/video AI-detection + Originality-style plagiarism via Hive classify endpoint. */
 class HiveStyleProvider implements AiCheckProvider {
   name = "hive-style";
   constructor(private apiKey: string) {}
+
   async run(input: CheckInput): Promise<CheckResult> {
-    return {
-      provider: this.name,
-      confidence: 0,
-      flagged: false,
-      raw: { note: "provider wired but remote call not implemented", hasKey: true }
+    if (!input.deliverableText) {
+      return {
+        provider: this.name,
+        confidence: 0,
+        flagged: false,
+        raw: { note: "no text content provided for plagiarism/requirement check" }
+      };
+    }
+
+    const classMap: Record<CheckType, string> = {
+      plagiarism: "plagiarism",
+      requirement_match: "relevance",
+      ai_generation: "ai_generated"
     };
+    const className = classMap[input.checkType] ?? "plagiarism";
+
+    try {
+      const res = await fetch("https://api.thehive.ai/v2/classify", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          input: { text: input.deliverableText },
+          config: { classes: [className] }
+        }),
+        signal: AbortSignal.timeout(30_000)
+      });
+
+      if (!res.ok) {
+        const body = await res.text().catch(() => "");
+        console.error("[ai] hive HTTP %d: %s", res.status, body.slice(0, 200));
+        return {
+          provider: this.name,
+          confidence: 0,
+          flagged: false,
+          raw: { error: `HTTP ${res.status}`, body: body.slice(0, 500) }
+        };
+      }
+
+      const data = await res.json() as {
+        status?: string;
+        response?: {
+          classes?: Record<string, number>;
+        };
+      };
+
+      const classes = data.response?.classes ?? {};
+      const rawScore = classes[className] ?? 0;
+      const confidence = typeof rawScore === "number" ? Math.min(1, Math.max(0, rawScore)) : 0;
+
+      return {
+        provider: this.name,
+        confidence,
+        flagged: confidence >= FLAG_THRESHOLD,
+        raw: {
+          class: className,
+          scores: classes,
+          status: data.status
+        }
+      };
+    } catch (err) {
+      console.error("[ai] hive call failed:", err);
+      return {
+        provider: this.name,
+        confidence: 0,
+        flagged: false,
+        raw: { error: String(err) }
+      };
+    }
   }
 }
 

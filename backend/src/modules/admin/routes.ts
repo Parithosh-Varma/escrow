@@ -3,8 +3,21 @@ import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { db } from "../../db-instance.js";
 import { tokens, users, notifications } from "../../db/schema.js";
-import { badRequest, notFound } from "../../errors.js";
+import { badRequest, conflict, notFound } from "../../errors.js";
 import { normalizeAddress } from "../../lib/chains.js";
+import {
+  bindChainEntity,
+  chainIdForEntity,
+  toChainId,
+  type ChainEntityType
+} from "../indexer/mapping.js";
+import { projects, milestones, disputes } from "../../db/schema.js";
+
+const bindBody = z.object({
+  entityType: z.enum(["project", "milestone", "dispute"]),
+  entityId: z.string().uuid(),
+  chainId: z.string().regex(/^\d+$/, "decimal uint256 string")
+});
 
 const tokenBody = z.object({
   address: z.string().regex(/^0x[0-9a-fA-F]{40}$/),
@@ -57,6 +70,32 @@ export default async function routes(app: FastifyInstance) {
 
   app.get("/admin/users", { preHandler: admin }, async () => {
     return { users: await db().select().from(users) };
+  });
+
+  /** Manual chain-id ↔ UUID binding (overrides/repairs indexer auto-bind). */
+  app.get("/admin/chain-links/:entityType/:entityId", { preHandler: admin }, async (req) => {
+    const entityType = (req.params as any).entityType as ChainEntityType;
+    const entityId = (req.params as any).entityId as string;
+    return { chainId: await chainIdForEntity(db(), entityType, entityId) };
+  });
+
+  app.post("/admin/chain-links", { preHandler: admin }, async (req, reply) => {
+    const b = bindBody.parse(req.body);
+    const table =
+      b.entityType === "project" ? projects : b.entityType === "milestone" ? milestones : disputes;
+    const [row] = await db()
+      .select({ id: table.id })
+      .from(table)
+      .where(eq(table.id, b.entityId))
+      .limit(1);
+    if (!row) throw notFound(`${b.entityType} not found`);
+    try {
+      await bindChainEntity(db(), b.entityType, b.entityId, toChainId(b.chainId));
+    } catch {
+      throw conflict("chain id already bound to another entity");
+    }
+    reply.code(201);
+    return { ok: true };
   });
 }
 

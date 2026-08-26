@@ -74,10 +74,33 @@ export const milestones = pgTable(
     fundedAt: timestamp("funded_at", { withTimezone: true }),
     submittedAt: timestamp("submitted_at", { withTimezone: true }),
     resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+    // Mirror of the on-chain partial-approval challenge window (RemainderHeld).
+    remainderAmount: text("remainder_amount"),
+    challengeDeadline: timestamp("challenge_deadline", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
   },
   (t) => [uniqueIndex("milestones_project_idx").on(t.projectId, t.idx)]
+);
+
+/**
+ * Bidirectional mapping between on-chain uint256 ids (EscrowCore) and backend
+ * UUIDs. chain_id is a decimal TEXT so the full uint256 range fits. Written by
+ * the indexer's mapping layer; replay-safe via the PK + unique index.
+ */
+export const chainLinks = pgTable(
+  "chain_links",
+  {
+    entityType: text("entity_type").notNull(), // project | milestone | dispute
+    entityId: uuid("entity_id").notNull(),
+    contractKey: text("contract_key").notNull().default("escrow"),
+    chainId: text("chain_id").notNull(),
+    boundAt: timestamp("bound_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (t) => [
+    primaryKey({ columns: [t.entityType, t.entityId] }),
+    uniqueIndex("chain_links_chain_unique").on(t.contractKey, t.entityType, t.chainId)
+  ]
 );
 
 export const submissions = pgTable("submissions", {

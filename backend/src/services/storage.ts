@@ -63,14 +63,79 @@ class DiskStorage implements StorageAdapter {
   }
 }
 
+class S3Storage implements StorageAdapter {
+  private bucket: string;
+  private client: any = null;
+
+  constructor() {
+    this.bucket = config.S3_BUCKET!;
+  }
+
+  private getClient() {
+    if (!this.client) {
+      const { S3Client } = require("@aws-sdk/client-s3");
+      this.client = new S3Client({
+        region: config.S3_REGION || "us-east-1",
+        ...(config.S3_ENDPOINT ? { endpoint: config.S3_ENDPOINT, forcePathStyle: true } : {}),
+        credentials: config.S3_ACCESS_KEY_ID && config.S3_SECRET_ACCESS_KEY
+          ? { accessKeyId: config.S3_ACCESS_KEY_ID, secretAccessKey: config.S3_SECRET_ACCESS_KEY }
+          : undefined
+      });
+    }
+    return this.client;
+  }
+
+  async put(buf: Buffer): Promise<StoredFile> {
+    const { PutObjectCommand } = require("@aws-sdk/client-s3");
+    const sha256 = createHash("sha256").update(buf).digest("hex");
+    const key = `escrow/${sha256.slice(0, 2)}/${sha256}`;
+    await this.getClient().send(
+      new PutObjectCommand({ Bucket: this.bucket, Key: key, Body: buf })
+    );
+    return { key, sha256, size: buf.byteLength };
+  }
+
+  async get(key: string): Promise<Buffer> {
+    const { GetObjectCommand } = require("@aws-sdk/client-s3");
+    try {
+      const res = await this.getClient().send(
+        new GetObjectCommand({ Bucket: this.bucket, Key: key })
+      );
+      const chunks: Buffer[] = [];
+      for await (const chunk of res.Body as AsyncIterable<Buffer>) {
+        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+      }
+      return Buffer.concat(chunks);
+    } catch (err: any) {
+      if (err.name === "NoSuchKey" || err.$?.httpStatusCode === 404) {
+        throw badRequest("file missing from store");
+      }
+      throw err;
+    }
+  }
+
+  async delete(key: string): Promise<void> {
+    const { DeleteObjectCommand } = require("@aws-sdk/client-s3");
+    await this.getClient().send(
+      new DeleteObjectCommand({ Bucket: this.bucket, Key: key })
+    );
+  }
+}
+
 let adapter: StorageAdapter | null = null;
 
 export function storage(): StorageAdapter {
   if (!adapter) {
-    adapter =
-      config.STORAGE_DRIVER === "memory"
-        ? new MemoryStorage()
-        : new DiskStorage(config.STORAGE_DIR);
+    switch (config.STORAGE_DRIVER) {
+      case "s3":
+        adapter = new S3Storage();
+        break;
+      case "memory":
+        adapter = new MemoryStorage();
+        break;
+      default:
+        adapter = new DiskStorage(config.STORAGE_DIR);
+    }
   }
   return adapter;
 }

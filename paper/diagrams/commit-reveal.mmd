@@ -1,0 +1,28 @@
+sequenceDiagram
+    participant P as Party
+    participant J as Jurors (3/5/7)
+    participant A as Admin Keeper
+    participant DB as Database
+
+    Note over P,DB: Phase 1 — Evidence (48h)
+    P->>DB: POST /disputes (open dispute)
+    A->>DB: POST /disputes/:id/assign-jurors
+
+    Note over P,DB: Phase 2 — Commit (24h)
+    J->>DB: POST /disputes/:id/vote/commit<br/>commitHash = keccak256(id, vote, salt)
+
+    Note over P,DB: Phase 3 — Reveal (24h)
+    A->>DB: POST /disputes/:id/advance<br/>(when deadline or >50% committed)
+    J->>DB: POST /disputes/:id/vote/reveal<br/>(vote, salt) verified against commit
+
+    Note over P,DB: Phase 4 — Resolution
+    A->>DB: POST /disputes/:id/advance<br/>(when deadline or >50% revealed)
+    DB->>DB: tallyVotes → majority wins
+    alt Majority freelancer
+        DB->>DB: splitBps = 10000 → payout to freelancer
+    else Majority client
+        DB->>DB: splitBps = 0 → refund to client
+    else Tie
+        DB->>DB: tie_escalated → admin arbiter sets splitBps
+    end
+    DB->>DB: write ledger entries<br/>(release + fee + juror rewards/slashing)

@@ -113,6 +113,15 @@ export default async function routes(app: FastifyInstance) {
     const { id } = req.params as { id: string };
     const p = await getProjectForUser(id, req.user);
     if (p.status !== "created") throw conflict(`project already ${p.status}`);
+
+    // Atomic conditional update to prevent double-fund race condition
+    const [updated] = await db()
+      .update(projects)
+      .set({ status: "funded", updatedAt: new Date() })
+      .where(and(eq(projects.id, id), eq(projects.status, "created")))
+      .returning();
+    if (!updated) throw conflict("project already funded (concurrent request)");
+
     const ms = await db()
       .select()
       .from(milestones)
@@ -131,10 +140,6 @@ export default async function routes(app: FastifyInstance) {
         ref: `project:${id}`
       });
     }
-    await db()
-      .update(projects)
-      .set({ status: "funded", updatedAt: new Date() })
-      .where(eq(projects.id, id));
     const [freelancer] = await db()
       .select()
       .from(users)

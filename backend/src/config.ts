@@ -41,8 +41,19 @@ const schema = z.object({
   INDEXER_START_BLOCK: z.coerce.number().default(0),
   INDEXER_POLL_MS: z.coerce.number().default(12000),
 
+  // Keeper bot (CHAIN_MODE=live only): sends autoReleaseMilestone /
+  // claimRemainder for anything due. Empty key => keeper idle.
+  KEEPER_PRIVATE_KEY: z
+    .string()
+    .regex(/^0x[0-9a-fA-F]{64}$/, "must be a 0x-prefixed 32-byte hex key")
+    .optional()
+    .or(z.literal("")),
+  KEEPER_POLL_MS: z.coerce.number().default(30000),
+  KEEPER_GRACE_SECONDS: z.coerce.number().default(120),
+
   PLATFORM_FEE_BPS: z.coerce.number().int().min(0).max(5000).default(200),
   REVIEW_TIMEOUT_SECONDS: z.coerce.number().int().positive().default(604800),
+  PARTIAL_REMAINDER: z.enum(["refund_to_client", "freelancer_keep"]).default("refund_to_client"),
 
   JUROR_BAND_1_MAX: z.string().default("500000000"),
   JUROR_BAND_2_MAX: z.string().default("5000000000"),
@@ -52,8 +63,14 @@ const schema = z.object({
   GPTZERO_API_KEY: z.string().optional().or(z.literal("")),
   HIVE_API_KEY: z.string().optional().or(z.literal("")),
 
-  STORAGE_DRIVER: z.enum(["memory", "disk"]).default("disk"),
-  STORAGE_DIR: z.string().default("./.data/files")
+  STORAGE_DRIVER: z.enum(["memory", "disk", "s3"]).default("disk"),
+  STORAGE_DIR: z.string().default("./.data/files"),
+
+  S3_BUCKET: z.string().optional().or(z.literal("")),
+  S3_REGION: z.string().optional().or(z.literal("")),
+  S3_ENDPOINT: z.string().optional().or(z.literal("")),
+  S3_ACCESS_KEY_ID: z.string().optional().or(z.literal("")),
+  S3_SECRET_ACCESS_KEY: z.string().optional().or(z.literal("")),
 });
 
 export const config = schema.parse(process.env);

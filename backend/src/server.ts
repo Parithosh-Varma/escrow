@@ -10,7 +10,9 @@ import milestoneRoutes from "./modules/milestones/routes.js";
 import disputeRoutes from "./modules/disputes/routes.js";
 import fileRoutes from "./modules/files/routes.js";
 import adminRoutes from "./modules/admin/routes.js";
+import webRoutes from "./modules/web/routes.js";
 import { startPolling } from "./modules/indexer/service.js";
+import { startKeeper } from "./modules/keeper/service.js";
 import { ensureSeedTokens } from "./modules/admin/routes.js";
 import { initDb, db } from "./db/driver.js";
 import { runMigrations } from "./db/migrate.js";
@@ -62,6 +64,7 @@ export async function buildApp(): Promise<FastifyInstance> {
     chainMode: process.env.CHAIN_MODE ?? "off"
   }));
 
+  await app.register(webRoutes);
   await app.register(authRoutes);
   await app.register(projectRoutes);
   await app.register(milestoneRoutes);
@@ -71,6 +74,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await ensureSeedTokens();
 
   setImmediate(() => startPolling(app));
+  setImmediate(() => startKeeper(app));
 
   return app;
 }

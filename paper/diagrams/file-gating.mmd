@@ -1,0 +1,20 @@
+flowchart TB
+    REQ["GET /files/:id/content"] --> WHO{"Who is requesting?"}
+
+    WHO -->|"Owner or Admin"| ORIG["Return original bytes<br/>X-Access-Unlocked: true"]
+
+    WHO -->|"Counterparty (client)"| STATUS{"Milestone status?"}
+
+    STATUS -->|"approved / auto_released / resolved"| UNLOCK["Return original bytes<br/>X-Access-Unlocked: true"]
+
+    STATUS -->|"created / funded / in_progress / submitted"| WM["Generate watermarked preview<br/>(fresh per request)"]
+
+    WM --> CACHE["Cache watermark<br/>→ files.watermarked_key"]
+    CACHE --> VIEWER["Embed viewer-tagged metadata:<br/>fileId, viewer address, timestamp"]
+    VIEWER --> RESP["Return watermarked bytes<br/>X-Variant: watermarked_preview<br/>X-Access-Unlocked: false"]
+
+    style REQ fill:#e0e7ff,stroke:#4f46e5
+    style ORIG fill:#dcfce7,stroke:#16a34a
+    style UNLOCK fill:#dcfce7,stroke:#16a34a
+    style WM fill:#fef3c7,stroke:#d97706
+    style RESP fill:#f3e8ff,stroke:#9333ea

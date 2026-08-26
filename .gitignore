@@ -14,3 +14,6 @@ npm-debug.log*
 dist/
 .env.local
 deployments/localhost.json
+backend/escrow-local-db/
+backend/.data/
+.opencode/

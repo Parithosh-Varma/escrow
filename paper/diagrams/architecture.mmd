@@ -1,0 +1,51 @@
+graph TB
+    subgraph Client
+        C[Client Wallet]
+    end
+    subgraph Freelancer
+        F[Freelancer Wallet]
+    end
+    subgraph Backend["Backend (Fastify + TypeScript)"]
+        AUTH["Auth Module<br/>SIWE + JWT"]
+        PROJ["Projects Module"]
+        MILE["Milestones Module"]
+        DISP["Disputes Module"]
+        FILES["Files Module"]
+        ADMIN["Admin Module"]
+        IDX["Indexer Module"]
+    end
+    subgraph Services
+        SM["State Machine"]
+        LEDGER["Ledger"]
+        AI["AI Pipeline<br/>GPTZero + Hive"]
+        WM["Watermark Engine"]
+        STORE["Storage Adapter<br/>Memory / Disk / S3"]
+    end
+    subgraph Database["PostgreSQL"]
+        DB[(Drizzle ORM)]
+    end
+    subgraph Chain["Base L2"]
+        ESC["Escrow Contract"]
+        DISPC["Dispute Contract"]
+    end
+
+    C --> AUTH
+    F --> AUTH
+    AUTH --> DB
+    PROJ --> SM
+    PROJ --> DB
+    MILE --> LEDGER
+    MILE --> AI
+    MILE --> FILES
+    MILE --> DB
+    DISP --> LEDGER
+    DISP --> DB
+    FILES --> WM
+    FILES --> STORE
+    WM --> STORE
+    IDX --> ESC
+    IDX --> DISPC
+    IDX --> DB
+    ADMIN --> DB
+    SM --> DB
+    LEDGER --> DB

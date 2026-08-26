@@ -1,0 +1,13 @@
+flowchart LR
+    A["Milestone Amount<br/>(A base units)"] --> B{"Client approves<br/>b basis points"}
+    B --> C["approvedGross = ⌊A × b / 10000⌋"]
+    C --> D["platformFee = ⌊gross × fee / 10000⌋"]
+    C --> E["clientRefund = A − gross"]
+    D --> F["freelancer = gross − fee"]
+    D --> G["jurorPool = fee × 50%<br/>(on disputed only)"]
+
+    style A fill:#e0e7ff,stroke:#4f46e5
+    style F fill:#dcfce7,stroke:#16a34a
+    style E fill:#fef9c3,stroke:#ca8a04
+    style D fill:#f3e8ff,stroke:#9333ea
+    style G fill:#ffe4e6,stroke:#e11d48
