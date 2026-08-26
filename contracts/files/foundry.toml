@@ -1,0 +1,50 @@
+[profile.default]
+src = "."
+out = "out"
+libs = ["lib"]
+solc_version = "0.8.24"
+optimizer = true
+optimizer_runs = 200
+# via_ir intentionally OFF: with solc 0.8.24 + foundry 1.7.1 it miscompiles
+# cheatcode-heavy test contracts (block.timestamp reads fold across vm.warp calls),
+# and none of these contracts need IR-based optimization.
+via_ir = false
+
+remappings = [
+    "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",
+    "@openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/",
+    "forge-std/=lib/forge-std/src/",
+]
+
+# src = "." pulls dependency trees into auto-compilation; skip their non-imported
+# parts (Certora spec harnesses reference patched sources that don't exist, and the
+# upgradeable repo vendors a full duplicate of openzeppelin-contracts).
+skip = [
+    "*certora*",
+    "lib/openzeppelin-contracts-upgradeable/lib/*",
+    "lib/forge-std/lib/*",
+]
+
+[fuzz]
+runs = 500
+
+[lint]
+# Dependency trees drown out signal; keep only high-severity lints visible.
+severity = ["high"]
+
+# Deployment artifacts (deploy-<chainid>.json) are written here by scripts.
+[[profile.default.fs_permissions]]
+access = "read-write"
+path = "./deployments/"
+
+[invariant]
+# Chaos campaign: 64 sequences x 512 calls each (~33k handler invocations).
+runs = 64
+depth = 512
+fail-on-revert = false # handlers try/catch expected reverts, but belt-and-suspenders
+
+# FOUNDRY_PROFILE=heavy forge test --match-contract EscrowInvariants
+[profile.heavy.invariant]
+runs = 250
+depth = 750
+fail-on-revert = false
