@@ -1,7 +1,7 @@
 import { ethers } from "ethers";
 
 // ABI and address - replace with your deployed contract info
-import DecentralizedEscrowABI from "./DecentralizedEscrowABI.json";
+import DecentralizedEscrowABI from "../app/DecentralizedEscrowABI.json";
 
 class EscrowSDK {
   static STATUS_LABELS = ["Pending", "Funded", "Completed", "Disputed", "Refunded"];

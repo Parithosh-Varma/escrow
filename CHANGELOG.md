@@ -6,6 +6,7 @@ All notable changes to the Decentralized Escrow System are documented here.
 
 ### Added
 - Landing page at `/` (hero with sealed-escrow visual, chains strip, how-it-works, features, security, closing CTA); console moved to `/app.html` with a back-to-site link. `?contract=` is carried through landing links into the console.
+- Split hosting: landing deploys from `site/` to escrow-dlp.pages.dev, console deploys from `app/` to escrow-app.pages.dev (absolute cross-links both ways). SDK ABI import and README paths updated to match.
 
 ### Changed
 - Redesigned the DApp UI (`frontend/index.html`) as "Escrow Ledger": pine-ink + brass + bone palette, Fraunces display with Inter body and Plex Mono for on-chain data, three-arc seal mark

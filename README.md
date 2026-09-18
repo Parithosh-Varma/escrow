@@ -324,7 +324,8 @@ sdk.onEscrowCompleted((data) => {
 
 ### HTML DApp
 
-Open `frontend/index.html` in a browser with MetaMask installed for a working demo UI.
+Live: landing at <https://escrow-dlp.pages.dev/> and console at <https://escrow-app.pages.dev/>.
+Locally, open `app/index.html` in a browser with MetaMask installed for a working demo UI.
 
 ---
 
@@ -359,10 +360,15 @@ test/
 scripts/
 └── deploy.js                 # Deployment script
 
+site/
+└── index.html                # Landing page (deployed to escrow-dlp.pages.dev)
+
+app/
+├── index.html                # Console DApp (deployed to escrow-app.pages.dev)
+└── DecentralizedEscrowABI.json # Contract ABI
+
 frontend/
-├── EscrowSDK.js              # JavaScript SDK
-├── DecentralizedEscrowABI.json # Contract ABI
-└── index.html                # Demo web app
+└── EscrowSDK.js              # JavaScript SDK
 ```
 
 ---
