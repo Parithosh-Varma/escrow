@@ -34,6 +34,7 @@
     <button onclick="init()">🔌 Connect Wallet</button>
   </div>
   <p class="small">Network: <span id="network">-</span> | Account: <span id="account">-</span> | Contract: <span id="contractAddr">-</span></p>
+  <p class="small">Contract address: <input id="contractInput" placeholder="0x… deployed address" size="42" /> <button onclick="saveContract()">Use</button> <span class="small">(or append ?contract=0x… to the URL)</span></p>
   <div id="toast"></div>
 
   <div class="card">
@@ -73,10 +74,20 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/ethers@6/dist/ethers.min.js"></script>
-  <script src="./DecentralizedEscrowABI.json"></script>
   <script>
-    const CONTRACT_ADDRESS = "YOUR_DEPLOYED_ADDRESS";
+    const CONTRACT_PLACEHOLDER = "YOUR_DEPLOYED_ADDRESS";
+    const _qs = new URLSearchParams(location.search);
+    let CONTRACT_ADDRESS = localStorage.getItem("escrow.contract") || _qs.get("contract") || CONTRACT_PLACEHOLDER;
+    if (_qs.get("contract")) localStorage.setItem("escrow.contract", CONTRACT_ADDRESS);
+    let CONTRACT_ABI = [];
     let signer, contract;
+
+    async function loadAbi() {
+      try {
+        const r = await fetch("./DecentralizedEscrowABI.json", { cache: "no-cache" });
+        if (r.ok) { const j = await r.json(); if (Array.isArray(j)) CONTRACT_ABI = j; }
+      } catch (e) { console.warn("ABI load failed", e); }
+    }
 
     function showToast(msg, type="success") {
       const t=document.getElementById("toast");
@@ -95,21 +106,44 @@
         if (!window.ethereum) return showToast("Install MetaMask", "error");
         const provider = new ethers.BrowserProvider(window.ethereum);
         signer = await provider.getSigner();
-        // load ABI safely
-        const abiData = typeof abi !== 'undefined' ? abi : [];
-        contract = new ethers.Contract(CONTRACT_ADDRESS, abiData, signer);
+        await loadAbi();
         document.getElementById("account").textContent = await signer.getAddress();
         document.getElementById("network").textContent = (await provider.getNetwork()).name;
+        syncContractInput();
+        if (CONTRACT_ADDRESS === CONTRACT_PLACEHOLDER) {
+          document.getElementById("contractAddr").textContent = "not set";
+          return showToast("Set the contract address below (or ?contract=0x…)", "error");
+        }
+        contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
         document.getElementById("contractAddr").textContent = CONTRACT_ADDRESS.slice(0,10)+"...";
-        if (CONTRACT_ADDRESS === "YOUR_DEPLOYED_ADDRESS") showToast("Set CONTRACT_ADDRESS to deployed address", "error");
-        else showToast("Wallet connected");
+        showToast("Wallet connected");
       } catch(e){ handleError(e); }
+    }
+
+    function syncContractInput() {
+      const el = document.getElementById("contractInput");
+      if (el && CONTRACT_ADDRESS !== CONTRACT_PLACEHOLDER) el.value = CONTRACT_ADDRESS;
+    }
+
+    async function saveContract() {
+      const v = document.getElementById("contractInput").value.trim();
+      if (!/^0x[0-9a-fA-F]{40}$/.test(v)) return showToast("Invalid contract address", "error");
+      CONTRACT_ADDRESS = v;
+      localStorage.setItem("escrow.contract", v);
+      showToast("Contract saved — reconnecting…");
+      await init();
+    }
+
+    function needContract() {
+      if (!contract) { showToast("Connect wallet and set the contract address first", "error"); return false; }
+      return true;
     }
 
     init();
 
     async function createEscrow() {
       try {
+      if (!needContract()) return;
       const seller = document.getElementById("seller").value;
       const arbiter = document.getElementById("arbiter").value;
       const token = document.getElementById("token").value;
@@ -123,6 +157,7 @@
     }
 
     async function deposit() {
+      if (!needContract()) return;
       const id = document.getElementById("depositId").value;
       const escrow = await contract.escrows(id);
       const tx = await contract.deposit(id, { value: escrow.amount });
@@ -131,6 +166,7 @@
     }
 
     async function confirmBuyer() {
+      if (!needContract()) return;
       const id = document.getElementById("actionId").value;
       const tx = await contract.confirmByBuyer(id);
       await tx.wait();
@@ -138,6 +174,7 @@
     }
 
     async function confirmSeller() {
+      if (!needContract()) return;
       const id = document.getElementById("actionId").value;
       const tx = await contract.confirmBySeller(id);
       await tx.wait();
@@ -145,6 +182,7 @@
     }
 
     async function releaseFunds() {
+      if (!needContract()) return;
       const id = document.getElementById("actionId").value;
       const tx = await contract.release(id);
       await tx.wait();
@@ -152,6 +190,7 @@
     }
 
     async function openDispute() {
+      if (!needContract()) return;
       const id = document.getElementById("actionId").value;
       const tx = await contract.openDispute(id);
       await tx.wait();
@@ -159,6 +198,7 @@
     }
 
     async function resolveDisputeSeller() {
+      if (!needContract()) return;
       const id = document.getElementById("actionId").value;
       const tx = await contract.resolveDispute(id, 2);
       await tx.wait();
@@ -166,6 +206,7 @@
     }
 
     async function resolveDisputeBuyer() {
+      if (!needContract()) return;
       const id = document.getElementById("actionId").value;
       const tx = await contract.resolveDispute(id, 4);
       await tx.wait();
@@ -173,6 +214,7 @@
     }
 
     async function requestRefund() {
+      if (!needContract()) return;
       const id = document.getElementById("actionId").value;
       const tx = await contract.requestRefund(id);
       await tx.wait();
@@ -180,6 +222,7 @@
     }
 
     async function queryEscrow() {
+      if (!needContract()) return;
       const id = document.getElementById("queryId").value;
       const e = await contract.escrows(id);
       const statusMap = ["Pending", "Funded", "Completed", "Disputed", "Refunded"];

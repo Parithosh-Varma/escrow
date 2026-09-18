@@ -1,0 +1,8 @@
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+/DecentralizedEscrowABI.json
+  Content-Type: application/json
+  Cache-Control: public, max-age=3600
