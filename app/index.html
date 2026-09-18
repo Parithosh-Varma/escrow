@@ -104,6 +104,8 @@
 
     .hint { color: var(--faint); font-size: 0.8rem; margin: 2px 0 0; }
     .hint code { font-family: var(--font-mono); color: var(--muted); font-size: 0.76rem; }
+    #walletHint { margin-top: 10px; }
+    #walletHint a { color: var(--brass); }
 
     /* ---------- console grid ---------- */
     .grid {
@@ -366,6 +368,7 @@
     </header>
 
     <p class="ledger-line">network <b id="network">–</b> · account <b id="account">–</b> · contract <b id="contractAddr">–</b></p>
+    <p class="hint" id="walletHint" hidden>No wallet detected here. Install <a href="https://metamask.io/download/" target="_blank" rel="noopener">MetaMask</a>, <a href="https://www.coinbase.com/wallet" target="_blank" rel="noopener">Coinbase Wallet</a>, or <a href="https://rabby.io/" target="_blank" rel="noopener">Rabby</a> — then refresh and connect.</p>
 
     <div class="contract-bar">
       <div class="field">
@@ -479,6 +482,47 @@
       } catch (e) { console.warn("ABI load failed", e); }
     }
 
+    // ---- wallet discovery (EIP-6963 multi-wallet + legacy injection) ----
+    const _wallets = new Map(); // uuid -> { info, provider }
+    window.addEventListener("eip6963:announceProvider", (event) => {
+      const d = event && event.detail;
+      if (d && d.info && d.provider && !_wallets.has(d.info.uuid)) _wallets.set(d.info.uuid, d);
+    });
+
+    function discoverWallets() {
+      try { window.dispatchEvent(new Event("eip6963:requestProvider")); } catch (e) { /* pre-6963 browser */ }
+    }
+
+    function injectedProvider() {
+      if (_wallets.size) return [..._wallets.values()][0].provider;
+      return window.ethereum || null;
+    }
+
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+    async function getProvider() {
+      discoverWallets();
+      await sleep(350); // allow late-injecting wallets to announce
+      return injectedProvider();
+    }
+
+    function noWalletMessage() {
+      const mobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent || "");
+      return mobile
+        ? "No wallet found — open this page in your wallet app's browser (MetaMask, Coinbase, Trust), then reconnect."
+        : "No wallet found — install MetaMask, Coinbase Wallet, or Rabby, refresh, then reconnect.";
+    }
+
+    function showWalletHint() {
+      const el = document.getElementById("walletHint");
+      if (el) el.hidden = false;
+    }
+
+    function hideWalletHint() {
+      const el = document.getElementById("walletHint");
+      if (el) el.hidden = true;
+    }
+
     function showToast(msg, type="success") {
       const t = document.getElementById("toast");
       t.textContent = msg; t.className = type; t.style.display = "block";
@@ -487,15 +531,25 @@
     }
 
     function handleError(e) {
-      const msg = e?.reason || e?.message || String(e);
+      let msg = e?.reason || e?.message || String(e);
+      if (e?.code === 4001 || /user rejected/i.test(msg)) {
+        msg = "Connection rejected in wallet — approve the request to continue.";
+      } else if (e?.code === -32002 || /already pending/i.test(msg)) {
+        msg = "A wallet request is already pending — open your wallet to approve it.";
+      }
       showToast(msg, "error");
       console.error(e);
     }
 
     async function init() {
       try {
-        if (!window.ethereum) return showToast("Install MetaMask", "error");
-        const provider = new ethers.BrowserProvider(window.ethereum);
+        const injected = await getProvider();
+        if (!injected) {
+          showWalletHint();
+          return showToast(noWalletMessage(), "error");
+        }
+        hideWalletHint();
+        const provider = new ethers.BrowserProvider(injected);
         signer = await provider.getSigner();
         await loadAbi();
         document.getElementById("account").textContent = await signer.getAddress();
@@ -530,7 +584,10 @@
       return true;
     }
 
-    init();
+    // Boot quietly: prefill contract, listen for wallets — never error on arrival.
+    discoverWallets();
+    syncContractInput();
+    setTimeout(() => { if (!injectedProvider()) showWalletHint(); }, 600);
 
     async function createEscrow() {
       try {
