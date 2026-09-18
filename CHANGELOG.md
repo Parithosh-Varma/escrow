@@ -2,6 +2,14 @@
 
 All notable changes to the Decentralized Escrow System are documented here.
 
+## [Unreleased]
+
+### Changed
+- Redesigned the DApp UI (`frontend/index.html`) as "Escrow Ledger": pine-ink + brass + bone palette, Fraunces display with Inter body and Plex Mono for on-chain data, three-arc seal mark
+- Lookup card now renders the escrow lifecycle as a stamped pipeline (Pending → Funded → Completed, with Disputed/Refunded branches) instead of raw JSON
+- Expiration input is now a date-time picker instead of a raw unix timestamp; fee field correctly labeled in bps
+- All inputs have real labels; toasts use `role="status"`; `prefers-reduced-motion` respected
+
 ## [1.2.0] - 2026-09-18
 
 ### Added

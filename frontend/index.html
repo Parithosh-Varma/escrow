@@ -3,75 +3,465 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Escrow DApp</title>
+  <meta name="description" content="Decentralized escrow console — open, fund, settle, and inspect trustless escrows on EVM chains." />
+  <title>Escrow Ledger — Decentralized Escrow Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
   <style>
-    :root { --primary: #4f46e5; --primary-hover: #4338ca; --bg: #f8fafc; --card-bg: #fff; --border: #e2e8f0; }
-    body { font-family: 'Inter', system-ui, sans-serif; max-width: 860px; margin: 0 auto; padding: 24px; background: var(--bg); color: #1e293b; line-height: 1.6; }
-    h1 { font-size: 1.9rem; margin-bottom: 4px; }
-    h3 { margin-top: 0; color: #334155; }
-    input, button { margin: 4px; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); font-size: 14px; }
-    input:focus { outline: 2px solid var(--primary); border-color: transparent; }
-    button { cursor: pointer; background: var(--primary); color: #fff; border: none; font-weight: 600; transition: background .15s; }
-    button:hover { background: var(--primary-hover); }
-    button:disabled { opacity: .6; cursor: not-allowed; }
-    .card { border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin: 16px 0; background: var(--card-bg); box-shadow: 0 1px 3px rgba(0,0,0,.06); }
-    .status-badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
-    .pending { background: #fef3c7; color: #92400e; }
-    .funded { background: #dbeafe; color: #1e40af; }
-    .completed { background: #dcfce7; color: #166534; }
-    .disputed { background: #fee2e2; color: #991b1b; }
-    .refunded { background: #e2e8f0; color: #475569; }
-    #toast { position: fixed; bottom: 16px; right: 16px; padding: 12px 18px; border-radius: 8px; font-size: 14px; display: none; max-width: 360px; z-index: 999; }
-    #toast.success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-    #toast.error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
-    .header-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
-    .small { font-size: 13px; color: #64748b; }
+    :root {
+      --ink: #0f1d1c;
+      --ink-deep: #0b1514;
+      --panel: #152422;
+      --panel-soft: #182825;
+      --line: #2c3d38;
+      --line-brass: #5c5138;
+      --bone: #ece4d1;
+      --muted: #93a29b;
+      --faint: #64756f;
+      --brass: #c9a24b;
+      --brass-deep: #9a7a34;
+      --sage: #8fb996;
+      --steel: #7fa6c9;
+      --mint: #62b989;
+      --wax: #c0523f;
+      --stone: #8a8f98;
+      --radius: 14px;
+      --font-display: "Fraunces", Georgia, serif;
+      --font-body: "Inter", system-ui, sans-serif;
+      --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(1200px 400px at 50% -120px, #1b2f2b 0%, var(--ink) 60%),
+        var(--ink);
+      color: var(--bone);
+      font-family: var(--font-body);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 32px 24px 64px; }
+
+    /* ---------- masthead ---------- */
+    .masthead {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+      padding-bottom: 22px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand { display: flex; align-items: center; gap: 16px; }
+
+    .seal { width: 52px; height: 52px; flex: none; }
+
+    .wordmark {
+      font-family: var(--font-display);
+      font-weight: 650;
+      font-size: 2rem;
+      line-height: 1.05;
+      letter-spacing: 0.01em;
+      margin: 0;
+    }
+
+    .wordmark em { font-style: normal; color: var(--brass); }
+
+    .tagline { margin: 4px 0 0; color: var(--muted); font-size: 0.92rem; }
+
+    .ledger-line {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--muted);
+      background: var(--ink-deep);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-top: 18px;
+      overflow-wrap: anywhere;
+    }
+
+    .ledger-line b { color: var(--bone); font-weight: 500; }
+
+    .connect { align-self: center; }
+
+    /* ---------- contract bar ---------- */
+    .contract-bar {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 20px 0 6px;
+    }
+
+    .contract-bar .field { flex: 1 1 320px; margin: 0; }
+
+    .hint { color: var(--faint); font-size: 0.8rem; margin: 2px 0 0; }
+    .hint code { font-family: var(--font-mono); color: var(--muted); font-size: 0.76rem; }
+
+    /* ---------- console grid ---------- */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 16px;
+      margin-top: 18px;
+    }
+
+    .card {
+      background: linear-gradient(180deg, var(--panel-soft), var(--panel));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 22px;
+    }
+
+    .card h2 { font-size: 1.05rem; margin: 6px 0 4px; font-weight: 600; }
+
+    .card p.desc { margin: 0 0 14px; color: var(--muted); font-size: 0.88rem; }
+
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--brass);
+    }
+
+    .span-7 { grid-column: span 7; }
+    .span-5 { grid-column: span 5; }
+    .span-12 { grid-column: span 12; }
+
+    /* ---------- forms ---------- */
+    .field { margin: 0 0 12px; }
+
+    label {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+
+    input {
+      width: 100%;
+      background: var(--ink-deep);
+      border: 1px solid var(--line);
+      color: var(--bone);
+      border-radius: 9px;
+      padding: 10px 12px;
+      font-size: 0.9rem;
+      font-family: var(--font-mono);
+    }
+
+    input::placeholder { color: var(--faint); }
+    input:focus-visible { outline: 2px solid var(--brass); outline-offset: 1px; border-color: var(--brass); }
+
+    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    button {
+      font-family: var(--font-body);
+      font-weight: 600;
+      font-size: 0.9rem;
+      border-radius: 9px;
+      padding: 10px 18px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: transform 0.06s ease, background 0.15s ease, border-color 0.15s ease;
+    }
+
+    button:active { transform: translateY(1px); }
+
+    button:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+
+    .btn-primary { background: linear-gradient(180deg, #d8b45e, var(--brass)); color: #241c08; }
+    .btn-primary:hover { background: linear-gradient(180deg, #e3c06a, #d0aa52); }
+    .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    .btn-ghost { background: transparent; border-color: var(--line); color: var(--bone); }
+    .btn-ghost:hover { border-color: var(--brass); color: var(--brass); }
+
+    .btn-wax-ghost { background: transparent; border-color: var(--line); color: var(--bone); }
+    .btn-wax-ghost:hover { border-color: var(--wax); color: var(--wax); }
+
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+
+    /* ---------- status badges ---------- */
+    .badge {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 3px 12px;
+      border-radius: 999px;
+      border: 1px solid;
+    }
+
+    .badge-pending { color: var(--brass); border-color: var(--brass-deep); background: #c9a24b14; }
+    .badge-funded { color: var(--steel); border-color: #4a6a8a; background: #7fa6c914; }
+    .badge-completed { color: var(--mint); border-color: #3f7a58; background: #62b98914; }
+    .badge-disputed { color: var(--wax); border-color: #7e352a; background: #c0523f14; }
+    .badge-refunded { color: var(--stone); border-color: #565b63; background: #8a8f9814; }
+
+    /* ---------- lifecycle stepper (signature) ---------- */
+    .lifecycle {
+      list-style: none;
+      display: flex;
+      margin: 18px 0 6px;
+      padding: 0;
+    }
+
+    .lifecycle li { flex: 1; position: relative; text-align: center; }
+
+    .lifecycle li::before {
+      content: "";
+      position: absolute;
+      top: 11px;
+      left: -50%;
+      width: 100%;
+      height: 2px;
+      background: var(--line);
+    }
+
+    .lifecycle li:first-child::before { display: none; }
+
+    .lifecycle li.done::before { background: var(--brass-deep); }
+
+    .pip {
+      position: relative;
+      z-index: 1;
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2px solid var(--line);
+      background: var(--ink-deep);
+    }
+
+    .lifecycle li.done .pip { border-color: var(--brass); background: #c9a24b33; }
+
+    .lifecycle li.current .pip {
+      border-color: var(--brass);
+      background: var(--brass);
+      box-shadow: 0 0 0 5px #c9a24b26;
+      animation: stamp 0.45s cubic-bezier(0.2, 1.4, 0.4, 1);
+    }
+
+    @keyframes stamp {
+      from { transform: scale(0.4); box-shadow: 0 0 0 12px #c9a24b40; }
+      to { transform: scale(1); box-shadow: 0 0 0 5px #c9a24b26; }
+    }
+
+    .lifecycle .lbl {
+      display: block;
+      margin-top: 8px;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--faint);
+    }
+
+    .lifecycle li.done .lbl { color: var(--muted); }
+    .lifecycle li.current .lbl { color: var(--brass); }
+
+    .branch-note {
+      margin: 12px 0 0;
+      padding: 10px 14px;
+      border-radius: 9px;
+      font-size: 0.86rem;
+      border: 1px dashed;
+    }
+
+    .branch-note.disputed { color: var(--wax); border-color: #7e352a; background: #c0523f0d; }
+    .branch-note.refunded { color: var(--stone); border-color: #565b63; background: #8a8f980d; }
+
+    /* ---------- detail list ---------- */
+    .details { margin: 14px 0 0; }
+    .details div {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 7px 0;
+      border-bottom: 1px solid var(--line);
+      font-size: 0.86rem;
+    }
+
+    .details div:last-child { border-bottom: none; }
+    .details dt { color: var(--muted); flex: none; }
+    .details dd { margin: 0; font-family: var(--font-mono); font-size: 0.8rem; text-align: right; overflow-wrap: anywhere; }
+
+    .empty { color: var(--faint); font-size: 0.88rem; margin: 8px 0 0; }
+
+    /* ---------- toast ---------- */
+    #toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      max-width: 380px;
+      padding: 13px 18px;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      display: none;
+      z-index: 999;
+      border: 1px solid;
+      animation: rise 0.25s ease;
+    }
+
+    @keyframes rise {
+      from { transform: translateY(10px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    #toast.success { background: #12291d; color: var(--mint); border-color: #3f7a58; }
+    #toast.error { background: #2b1512; color: #e08a7a; border-color: #7e352a; }
+
+    footer {
+      margin-top: 28px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+      color: var(--faint);
+      font-size: 0.78rem;
+      font-family: var(--font-mono);
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 880px) {
+      .span-7, .span-5 { grid-column: span 12; }
+      .row-2 { grid-template-columns: 1fr; }
+      .wordmark { font-size: 1.6rem; }
+      .wrap { padding: 22px 16px 48px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
   </style>
 </head>
 <body>
-  <div class="header-bar">
-    <h1>Decentralized Escrow</h1>
-    <button onclick="init()">🔌 Connect Wallet</button>
-  </div>
-  <p class="small">Network: <span id="network">-</span> | Account: <span id="account">-</span> | Contract: <span id="contractAddr">-</span></p>
-  <p class="small">Contract address: <input id="contractInput" placeholder="0x… deployed address" size="42" /> <button onclick="saveContract()">Use</button> <span class="small">(or append ?contract=0x… to the URL)</span></p>
-  <div id="toast"></div>
+  <div class="wrap">
+    <header class="masthead">
+      <div class="brand">
+        <svg class="seal" viewBox="0 0 52 52" aria-hidden="true">
+          <circle cx="26" cy="26" r="24" fill="none" stroke="#c9a24b" stroke-width="2"/>
+          <circle cx="26" cy="26" r="18.5" fill="none" stroke="#5c5138" stroke-width="1"/>
+          <path d="M26 8 A18 18 0 0 1 41.6 17.4" fill="none" stroke="#c9a24b" stroke-width="3.5" stroke-linecap="round"/>
+          <path d="M26 44 A18 18 0 0 1 10.4 34.6" fill="none" stroke="#8fb996" stroke-width="3.5" stroke-linecap="round"/>
+          <path d="M41.6 34.6 A18 18 0 0 1 26 44" fill="none" stroke="#ece4d1" stroke-width="3.5" stroke-linecap="round" opacity="0.85"/>
+          <circle cx="26" cy="26" r="4.5" fill="#c9a24b"/>
+        </svg>
+        <div>
+          <h1 class="wordmark">Escrow <em>Ledger</em></h1>
+          <p class="tagline">Three parties. One seal. Settlement without trust.</p>
+        </div>
+      </div>
+      <button class="btn-primary connect" onclick="init()">Connect wallet</button>
+    </header>
 
-  <div class="card">
-    <h3>Create Escrow</h3>
-    <input id="seller" placeholder="Seller address" size="42" />
-    <input id="arbiter" placeholder="Arbiter address" size="42" />
-    <input id="token" placeholder="Token address (0x0 for ETH)" value="0x0000000000000000000000000000000000000000" size="42" />
-    <input id="amount" type="number" placeholder="Amount" />
-    <input id="expiration" type="number" placeholder="Expiration (unix ts)" />
-    <input id="feePercent" type="number" placeholder="Fee % (0 = default)" value="0" />
-    <button onclick="createEscrow()">Create Escrow</button>
+    <p class="ledger-line">network <b id="network">–</b> · account <b id="account">–</b> · contract <b id="contractAddr">–</b></p>
+
+    <div class="contract-bar">
+      <div class="field">
+        <label for="contractInput">Escrow contract</label>
+        <input id="contractInput" placeholder="0x… deployed address" size="42" spellcheck="false" autocomplete="off" />
+      </div>
+      <button class="btn-ghost" onclick="saveContract()">Use contract</button>
+    </div>
+    <p class="hint">Saved on this device. Tip: append <code>?contract=0x…</code> to share a pre-pointed link.</p>
+
+    <main class="grid">
+      <section class="card span-7" aria-labelledby="h-open">
+        <div class="eyebrow">01 · Open</div>
+        <h2 id="h-open">Open an escrow</h2>
+        <p class="desc">Lock the terms on-chain. Funds move in the next step.</p>
+        <div class="field">
+          <label for="seller">Seller address</label>
+          <input id="seller" placeholder="0x…" spellcheck="false" autocomplete="off" />
+        </div>
+        <div class="field">
+          <label for="arbiter">Arbiter address</label>
+          <input id="arbiter" placeholder="0x… neutral third party" spellcheck="false" autocomplete="off" />
+        </div>
+        <div class="row-2">
+          <div class="field">
+            <label for="token">Token address</label>
+            <input id="token" placeholder="0x0 for ETH" value="0x0000000000000000000000000000000000000000" spellcheck="false" autocomplete="off" />
+          </div>
+          <div class="field">
+            <label for="amount">Amount (ETH)</label>
+            <input id="amount" type="number" min="0" step="any" placeholder="10" />
+          </div>
+        </div>
+        <div class="row-2">
+          <div class="field">
+            <label for="expiration">Expires</label>
+            <input id="expiration" type="datetime-local" />
+          </div>
+          <div class="field">
+            <label for="feePercent">Fee (bps, 0 = default)</label>
+            <input id="feePercent" type="number" min="0" placeholder="0" value="0" />
+          </div>
+        </div>
+        <button class="btn-primary" onclick="createEscrow()">Create escrow</button>
+      </section>
+
+      <section class="card span-5" aria-labelledby="h-fund">
+        <div class="eyebrow">02 · Fund</div>
+        <h2 id="h-fund">Deposit funds</h2>
+        <p class="desc">The buyer locks the agreed amount into the escrow.</p>
+        <div class="field">
+          <label for="depositId">Escrow ID</label>
+          <input id="depositId" type="number" min="0" placeholder="0" />
+        </div>
+        <button class="btn-primary" onclick="deposit()">Deposit</button>
+      </section>
+
+      <section class="card span-7" aria-labelledby="h-settle">
+        <div class="eyebrow">03 · Settle or dispute</div>
+        <h2 id="h-settle">Settle the escrow</h2>
+        <p class="desc">Both sides confirm to release — or either side opens a dispute for the arbiter.</p>
+        <div class="field">
+          <label for="actionId">Escrow ID</label>
+          <input id="actionId" type="number" min="0" placeholder="0" />
+        </div>
+        <div class="actions">
+          <button class="btn-ghost" onclick="confirmBuyer()">Confirm · buyer</button>
+          <button class="btn-ghost" onclick="confirmSeller()">Confirm · seller</button>
+          <button class="btn-primary" onclick="releaseFunds()">Release</button>
+          <button class="btn-wax-ghost" onclick="openDispute()">Open dispute</button>
+          <button class="btn-ghost" onclick="resolveDisputeSeller()">Resolve → seller</button>
+          <button class="btn-ghost" onclick="resolveDisputeBuyer()">Resolve → refund</button>
+          <button class="btn-ghost" onclick="requestRefund()">Request refund</button>
+        </div>
+      </section>
+
+      <section class="card span-5" aria-labelledby="h-lookup">
+        <div class="eyebrow">Ledger lookup</div>
+        <h2 id="h-lookup">Inspect an escrow</h2>
+        <p class="desc">Read the current state straight from the chain.</p>
+        <div class="field">
+          <label for="queryId">Escrow ID</label>
+          <input id="queryId" type="number" min="0" placeholder="0" />
+        </div>
+        <button class="btn-primary" onclick="queryEscrow()">Look up</button>
+        <div id="escrowInfo"><p class="empty">No escrow inspected yet.</p></div>
+      </section>
+    </main>
+
+    <footer>
+      <span>sealed on-chain · eth &amp; erc-20</span>
+      <span>buyer · seller · arbiter</span>
+    </footer>
   </div>
 
-  <div class="card">
-    <h3>Deposit</h3>
-    <input id="depositId" type="number" placeholder="Escrow ID" />
-    <button onclick="deposit()">Deposit ETH</button>
-  </div>
-
-  <div class="card">
-    <h3>Actions</h3>
-    <input id="actionId" type="number" placeholder="Escrow ID" />
-    <button onclick="confirmBuyer()">Confirm (Buyer)</button>
-    <button onclick="confirmSeller()">Confirm (Seller)</button>
-    <button onclick="releaseFunds()">Release</button>
-    <button onclick="openDispute()">Open Dispute</button>
-    <button onclick="resolveDisputeSeller()">Resolve → Seller</button>
-    <button onclick="resolveDisputeBuyer()">Resolve → Refund</button>
-    <button onclick="requestRefund()">Request Refund</button>
-  </div>
-
-  <div class="card">
-    <h3>Query Escrow</h3>
-    <input id="queryId" type="number" placeholder="Escrow ID" />
-    <button onclick="queryEscrow()">Query</button>
-    <pre id="escrowInfo"></pre>
-  </div>
+  <div id="toast" role="status" aria-live="polite"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/ethers@6/dist/ethers.min.js"></script>
   <script>
@@ -90,9 +480,10 @@
     }
 
     function showToast(msg, type="success") {
-      const t=document.getElementById("toast");
-      t.textContent=msg; t.className=type; t.style.display="block";
-      setTimeout(()=> t.style.display="none", 4000);
+      const t = document.getElementById("toast");
+      t.textContent = msg; t.className = type; t.style.display = "block";
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(() => t.style.display = "none", 4200);
     }
 
     function handleError(e) {
@@ -112,12 +503,12 @@
         syncContractInput();
         if (CONTRACT_ADDRESS === CONTRACT_PLACEHOLDER) {
           document.getElementById("contractAddr").textContent = "not set";
-          return showToast("Set the contract address below (or ?contract=0x…)", "error");
+          return showToast("Set the escrow contract below (or ?contract=0x…)", "error");
         }
         contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-        document.getElementById("contractAddr").textContent = CONTRACT_ADDRESS.slice(0,10)+"...";
+        document.getElementById("contractAddr").textContent = CONTRACT_ADDRESS.slice(0, 10) + "…";
         showToast("Wallet connected");
-      } catch(e){ handleError(e); }
+      } catch (e) { handleError(e); }
     }
 
     function syncContractInput() {
@@ -143,100 +534,146 @@
 
     async function createEscrow() {
       try {
-      if (!needContract()) return;
-      const seller = document.getElementById("seller").value;
-      const arbiter = document.getElementById("arbiter").value;
-      const token = document.getElementById("token").value;
-      const amount = ethers.parseEther(document.getElementById("amount").value);
-      const expiration = parseInt(document.getElementById("expiration").value);
-      const feePercent = parseInt(document.getElementById("feePercent").value);
-      const tx = await contract.createEscrow(seller, arbiter, token, amount, expiration, feePercent);
-      await tx.wait();
-      showToast("Escrow created! Tx: " + tx.hash.slice(0,10)+"...");
-      } catch(e){ handleError(e); }
+        if (!needContract()) return;
+        const seller = document.getElementById("seller").value.trim();
+        const arbiter = document.getElementById("arbiter").value.trim();
+        const token = document.getElementById("token").value.trim();
+        const amountRaw = document.getElementById("amount").value;
+        if (!amountRaw || Number(amountRaw) <= 0) return showToast("Enter an amount above zero", "error");
+        const amount = ethers.parseEther(amountRaw);
+        const expMs = new Date(document.getElementById("expiration").value).getTime();
+        if (!Number.isFinite(expMs)) return showToast("Choose an expiration date and time", "error");
+        const expiration = Math.floor(expMs / 1000);
+        const feePercent = parseInt(document.getElementById("feePercent").value || "0", 10);
+        const tx = await contract.createEscrow(seller, arbiter, token, amount, expiration, feePercent);
+        await tx.wait();
+        showToast("Escrow created · " + tx.hash.slice(0, 10) + "…");
+      } catch (e) { handleError(e); }
     }
 
     async function deposit() {
-      if (!needContract()) return;
-      const id = document.getElementById("depositId").value;
-      const escrow = await contract.escrows(id);
-      const tx = await contract.deposit(id, { value: escrow.amount });
-      await tx.wait();
-      showToast("Deposited! Tx: " + tx.hash.slice(0,10)+"...");
+      try {
+        if (!needContract()) return;
+        const id = document.getElementById("depositId").value;
+        const escrow = await contract.escrows(id);
+        const tx = await contract.deposit(id, { value: escrow.amount });
+        await tx.wait();
+        showToast("Deposited · " + tx.hash.slice(0, 10) + "…");
+      } catch (e) { handleError(e); }
     }
 
     async function confirmBuyer() {
-      if (!needContract()) return;
-      const id = document.getElementById("actionId").value;
-      const tx = await contract.confirmByBuyer(id);
-      await tx.wait();
-      showToast("Confirmed by buyer");
+      try {
+        if (!needContract()) return;
+        const id = document.getElementById("actionId").value;
+        const tx = await contract.confirmByBuyer(id);
+        await tx.wait();
+        showToast("Confirmed by buyer");
+      } catch (e) { handleError(e); }
     }
 
     async function confirmSeller() {
-      if (!needContract()) return;
-      const id = document.getElementById("actionId").value;
-      const tx = await contract.confirmBySeller(id);
-      await tx.wait();
-      showToast("Confirmed by seller");
+      try {
+        if (!needContract()) return;
+        const id = document.getElementById("actionId").value;
+        const tx = await contract.confirmBySeller(id);
+        await tx.wait();
+        showToast("Confirmed by seller");
+      } catch (e) { handleError(e); }
     }
 
     async function releaseFunds() {
-      if (!needContract()) return;
-      const id = document.getElementById("actionId").value;
-      const tx = await contract.release(id);
-      await tx.wait();
-      showToast("Released ✅");
+      try {
+        if (!needContract()) return;
+        const id = document.getElementById("actionId").value;
+        const tx = await contract.release(id);
+        await tx.wait();
+        showToast("Released");
+      } catch (e) { handleError(e); }
     }
 
     async function openDispute() {
-      if (!needContract()) return;
-      const id = document.getElementById("actionId").value;
-      const tx = await contract.openDispute(id);
-      await tx.wait();
-      showToast("Dispute opened");
+      try {
+        if (!needContract()) return;
+        const id = document.getElementById("actionId").value;
+        const tx = await contract.openDispute(id);
+        await tx.wait();
+        showToast("Dispute opened");
+      } catch (e) { handleError(e); }
     }
 
     async function resolveDisputeSeller() {
-      if (!needContract()) return;
-      const id = document.getElementById("actionId").value;
-      const tx = await contract.resolveDispute(id, 2);
-      await tx.wait();
-      showToast("Resolved → Seller");
+      try {
+        if (!needContract()) return;
+        const id = document.getElementById("actionId").value;
+        const tx = await contract.resolveDispute(id, 2);
+        await tx.wait();
+        showToast("Resolved to seller");
+      } catch (e) { handleError(e); }
     }
 
     async function resolveDisputeBuyer() {
-      if (!needContract()) return;
-      const id = document.getElementById("actionId").value;
-      const tx = await contract.resolveDispute(id, 4);
-      await tx.wait();
-      showToast("Resolved → Refund");
+      try {
+        if (!needContract()) return;
+        const id = document.getElementById("actionId").value;
+        const tx = await contract.resolveDispute(id, 4);
+        await tx.wait();
+        showToast("Resolved to refund");
+      } catch (e) { handleError(e); }
     }
 
     async function requestRefund() {
-      if (!needContract()) return;
-      const id = document.getElementById("actionId").value;
-      const tx = await contract.requestRefund(id);
-      await tx.wait();
-      showToast("Refunded ✅");
+      try {
+        if (!needContract()) return;
+        const id = document.getElementById("actionId").value;
+        const tx = await contract.requestRefund(id);
+        await tx.wait();
+        showToast("Refunded");
+      } catch (e) { handleError(e); }
+    }
+
+    const STATUS = ["Pending", "Funded", "Completed", "Disputed", "Refunded"];
+
+    function escrowHTML(e) {
+      const status = Number(e.status);
+      const locked = status === 0 || status === 1 || status === 3;
+      const path = ["Pending", "Funded", "Completed"].map((name, i) => {
+        const cls = status <= 2
+          ? (i < status ? "done" : i === status ? "current" : "todo")
+          : (i < 2 ? "done" : "todo");
+        return `<li class="${cls}"><span class="pip"></span><span class="lbl">${name}</span></li>`;
+      }).join("");
+      const branch = status === 3
+        ? `<p class="branch-note disputed">Disputed — funds stay locked until the arbiter resolves.</p>`
+        : status === 4
+          ? `<p class="branch-note refunded">Refunded — funds returned to the buyer.</p>`
+          : "";
+      const check = (v) => v ? "yes" : "not yet";
+      const row = (k, v) => `<div><dt>${k}</dt><dd>${v}</dd></div>`;
+      return `
+        <ol class="lifecycle" aria-label="Escrow lifecycle, currently ${STATUS[status]}">${path}</ol>
+        ${branch}
+        <dl class="details">
+          ${row("Status", `<span class="badge badge-${STATUS[status].toLowerCase()}">${STATUS[status]}</span>`)}
+          ${row("Amount", `${ethers.formatEther(e.amount)} ETH`)}
+          ${row("Buyer", e.buyer)}
+          ${row("Seller", e.seller)}
+          ${row("Arbiter", e.arbiter)}
+          ${row("Token", e.token)}
+          ${row("Buyer confirmed", check(e.buyerConfirmed))}
+          ${row("Seller confirmed", check(e.sellerConfirmed))}
+          ${row("Expires", new Date(Number(e.expiration) * 1000).toLocaleString())}
+          ${locked ? row("Custody", "locked in contract") : ""}
+        </dl>`;
     }
 
     async function queryEscrow() {
-      if (!needContract()) return;
-      const id = document.getElementById("queryId").value;
-      const e = await contract.escrows(id);
-      const statusMap = ["Pending", "Funded", "Completed", "Disputed", "Refunded"];
-      document.getElementById("escrowInfo").textContent = JSON.stringify({
-        buyer: e.buyer,
-        seller: e.seller,
-        arbiter: e.arbiter,
-        token: e.token,
-        amount: ethers.formatEther(e.amount),
-        status: statusMap[Number(e.status)],
-        buyerConfirmed: e.buyerConfirmed,
-        sellerConfirmed: e.sellerConfirmed,
-        expiration: new Date(Number(e.expiration) * 1000).toLocaleString(),
-      }, null, 2);
+      try {
+        if (!needContract()) return;
+        const id = document.getElementById("queryId").value;
+        const e = await contract.escrows(id);
+        document.getElementById("escrowInfo").innerHTML = escrowHTML(e);
+      } catch (e) { handleError(e); }
     }
   </script>
 </body>
