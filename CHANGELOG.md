@@ -4,6 +4,9 @@ All notable changes to the Decentralized Escrow System are documented here.
 
 ## [Unreleased]
 
+### Added
+- Landing page at `/` (hero with sealed-escrow visual, chains strip, how-it-works, features, security, closing CTA); console moved to `/app.html` with a back-to-site link. `?contract=` is carried through landing links into the console.
+
 ### Changed
 - Redesigned the DApp UI (`frontend/index.html`) as "Escrow Ledger": pine-ink + brass + bone palette, Fraunces display with Inter body and Plex Mono for on-chain data, three-arc seal mark
 - Lookup card now renders the escrow lifecycle as a stamped pipeline (Pending → Funded → Completed, with Disputed/Refunded branches) instead of raw JSON

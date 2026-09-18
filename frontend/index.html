@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Decentralized escrow console — open, fund, settle, and inspect trustless escrows on EVM chains." />
-  <title>Escrow Ledger — Decentralized Escrow Console</title>
+  <meta name="description" content="Escrow Ledger — trustless multi-party escrow on EVM chains. Lock ETH and ERC-20 in code until both sides confirm, or a neutral arbiter decides." />
+  <title>Escrow Ledger — Settlement Without Trust</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -15,7 +15,6 @@
       --panel: #152422;
       --panel-soft: #182825;
       --line: #2c3d38;
-      --line-brass: #5c5138;
       --bone: #ece4d1;
       --muted: #93a29b;
       --faint: #64756f;
@@ -37,7 +36,7 @@
     body {
       margin: 0;
       background:
-        radial-gradient(1200px 400px at 50% -120px, #1b2f2b 0%, var(--ink) 60%),
+        radial-gradient(1100px 420px at 50% -140px, #1b2f2b 0%, var(--ink) 60%),
         var(--ink);
       color: var(--bone);
       font-family: var(--font-body);
@@ -45,299 +44,238 @@
       min-height: 100vh;
     }
 
-    .wrap { max-width: 1080px; margin: 0 auto; padding: 32px 24px 64px; }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px 64px; }
 
-    /* ---------- masthead ---------- */
-    .masthead {
+    a { color: inherit; }
+
+    /* ---------- nav ---------- */
+    .nav {
       display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 20px;
-      flex-wrap: wrap;
-      padding-bottom: 22px;
+      align-items: center;
+      gap: 26px;
+      padding: 20px 0;
       border-bottom: 1px solid var(--line);
     }
 
-    .brand { display: flex; align-items: center; gap: 16px; }
+    .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; margin-right: auto; }
+    .brand .seal { width: 36px; height: 36px; }
+    .brand b { font-family: var(--font-display); font-weight: 650; font-size: 1.15rem; letter-spacing: 0.01em; }
+    .brand b em { font-style: normal; color: var(--brass); }
 
-    .seal { width: 52px; height: 52px; flex: none; }
+    .nav-links { display: flex; gap: 22px; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: 0.9rem; }
+    .nav-links a:hover { color: var(--bone); }
 
-    .wordmark {
-      font-family: var(--font-display);
-      font-weight: 650;
-      font-size: 2rem;
-      line-height: 1.05;
-      letter-spacing: 0.01em;
-      margin: 0;
-    }
-
-    .wordmark em { font-style: normal; color: var(--brass); }
-
-    .tagline { margin: 4px 0 0; color: var(--muted); font-size: 0.92rem; }
-
-    .ledger-line {
-      font-family: var(--font-mono);
-      font-size: 0.78rem;
-      color: var(--muted);
-      background: var(--ink-deep);
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      padding: 10px 14px;
-      margin-top: 18px;
-      overflow-wrap: anywhere;
-    }
-
-    .ledger-line b { color: var(--bone); font-weight: 500; }
-
-    .connect { align-self: center; }
-
-    /* ---------- contract bar ---------- */
-    .contract-bar {
-      display: flex;
-      align-items: flex-end;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin: 20px 0 6px;
-    }
-
-    .contract-bar .field { flex: 1 1 320px; margin: 0; }
-
-    .hint { color: var(--faint); font-size: 0.8rem; margin: 2px 0 0; }
-    .hint code { font-family: var(--font-mono); color: var(--muted); font-size: 0.76rem; }
-
-    /* ---------- console grid ---------- */
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(12, 1fr);
-      gap: 16px;
-      margin-top: 18px;
-    }
-
-    .card {
-      background: linear-gradient(180deg, var(--panel-soft), var(--panel));
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      padding: 22px;
-    }
-
-    .card h2 { font-size: 1.05rem; margin: 6px 0 4px; font-weight: 600; }
-
-    .card p.desc { margin: 0 0 14px; color: var(--muted); font-size: 0.88rem; }
-
-    .eyebrow {
-      font-family: var(--font-mono);
-      font-size: 0.72rem;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--brass);
-    }
-
-    .span-7 { grid-column: span 7; }
-    .span-5 { grid-column: span 5; }
-    .span-12 { grid-column: span 12; }
-
-    /* ---------- forms ---------- */
-    .field { margin: 0 0 12px; }
-
-    label {
-      display: block;
-      font-size: 0.8rem;
-      color: var(--muted);
-      margin-bottom: 5px;
-    }
-
-    input {
-      width: 100%;
-      background: var(--ink-deep);
-      border: 1px solid var(--line);
-      color: var(--bone);
-      border-radius: 9px;
-      padding: 10px 12px;
-      font-size: 0.9rem;
-      font-family: var(--font-mono);
-    }
-
-    input::placeholder { color: var(--faint); }
-    input:focus-visible { outline: 2px solid var(--brass); outline-offset: 1px; border-color: var(--brass); }
-
-    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-
-    button {
+    /* ---------- buttons ---------- */
+    .btn {
       font-family: var(--font-body);
       font-weight: 600;
       font-size: 0.9rem;
       border-radius: 9px;
-      padding: 10px 18px;
+      padding: 10px 20px;
       cursor: pointer;
       border: 1px solid transparent;
+      text-decoration: none;
+      display: inline-block;
       transition: transform 0.06s ease, background 0.15s ease, border-color 0.15s ease;
     }
 
-    button:active { transform: translateY(1px); }
-
-    button:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
-
+    .btn:active { transform: translateY(1px); }
+    .btn:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
     .btn-primary { background: linear-gradient(180deg, #d8b45e, var(--brass)); color: #241c08; }
     .btn-primary:hover { background: linear-gradient(180deg, #e3c06a, #d0aa52); }
-    .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
-
     .btn-ghost { background: transparent; border-color: var(--line); color: var(--bone); }
     .btn-ghost:hover { border-color: var(--brass); color: var(--brass); }
 
-    .btn-wax-ghost { background: transparent; border-color: var(--line); color: var(--bone); }
-    .btn-wax-ghost:hover { border-color: var(--wax); color: var(--wax); }
+    /* ---------- hero ---------- */
+    .hero {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 40px;
+      align-items: center;
+      padding: 72px 0 56px;
+    }
 
-    .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
-
-    /* ---------- status badges ---------- */
-    .badge {
-      display: inline-block;
+    .eyebrow {
       font-family: var(--font-mono);
       font-size: 0.72rem;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.16em;
       text-transform: uppercase;
-      padding: 3px 12px;
-      border-radius: 999px;
-      border: 1px solid;
+      color: var(--brass);
+      margin: 0 0 14px;
     }
 
-    .badge-pending { color: var(--brass); border-color: var(--brass-deep); background: #c9a24b14; }
-    .badge-funded { color: var(--steel); border-color: #4a6a8a; background: #7fa6c914; }
-    .badge-completed { color: var(--mint); border-color: #3f7a58; background: #62b98914; }
-    .badge-disputed { color: var(--wax); border-color: #7e352a; background: #c0523f14; }
-    .badge-refunded { color: var(--stone); border-color: #565b63; background: #8a8f9814; }
-
-    /* ---------- lifecycle stepper (signature) ---------- */
-    .lifecycle {
-      list-style: none;
-      display: flex;
-      margin: 18px 0 6px;
-      padding: 0;
+    h1 {
+      font-family: var(--font-display);
+      font-weight: 650;
+      font-size: clamp(2.4rem, 5vw, 3.6rem);
+      line-height: 1.04;
+      letter-spacing: 0.005em;
+      margin: 0 0 18px;
     }
 
-    .lifecycle li { flex: 1; position: relative; text-align: center; }
+    h1 em { font-style: normal; color: var(--brass); }
 
-    .lifecycle li::before {
-      content: "";
-      position: absolute;
-      top: 11px;
-      left: -50%;
-      width: 100%;
-      height: 2px;
-      background: var(--line);
-    }
+    .lede { color: var(--muted); font-size: 1.06rem; max-width: 34rem; margin: 0 0 28px; }
+    .lede b { color: var(--bone); font-weight: 500; }
 
-    .lifecycle li:first-child::before { display: none; }
+    .cta-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
 
-    .lifecycle li.done::before { background: var(--brass-deep); }
+    .microcopy { margin: 14px 0 0; color: var(--faint); font-size: 0.82rem; font-family: var(--font-mono); }
 
-    .pip {
+    /* ---------- sealed card (hero visual) ---------- */
+    .sealed {
+      background: linear-gradient(180deg, var(--panel-soft), var(--panel));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: 0 24px 60px -30px #000;
       position: relative;
-      z-index: 1;
-      display: inline-block;
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      border: 2px solid var(--line);
-      background: var(--ink-deep);
     }
 
-    .lifecycle li.done .pip { border-color: var(--brass); background: #c9a24b33; }
+    .sealed::after {
+      content: "SEALED";
+      position: absolute;
+      top: 18px;
+      right: -8px;
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.22em;
+      color: var(--ink-deep);
+      background: var(--brass);
+      padding: 5px 12px 5px 14px;
+      border-radius: 4px 0 0 4px;
+    }
 
+    .sealed h3 { margin: 0; font-size: 1rem; font-weight: 600; }
+    .sealed .sub { margin: 2px 0 0; color: var(--faint); font-family: var(--font-mono); font-size: 0.76rem; }
+
+    .lifecycle { list-style: none; display: flex; margin: 20px 0 4px; padding: 0; }
+    .lifecycle li { flex: 1; position: relative; text-align: center; }
+    .lifecycle li::before {
+      content: ""; position: absolute; top: 11px; left: -50%;
+      width: 100%; height: 2px; background: var(--brass-deep);
+    }
+    .lifecycle li:first-child::before { display: none; }
+    .pip {
+      position: relative; z-index: 1; display: inline-block;
+      width: 24px; height: 24px; border-radius: 50%;
+      border: 2px solid var(--brass); background: #c9a24b33;
+    }
     .lifecycle li.current .pip {
-      border-color: var(--brass);
       background: var(--brass);
       box-shadow: 0 0 0 5px #c9a24b26;
-      animation: stamp 0.45s cubic-bezier(0.2, 1.4, 0.4, 1);
+      animation: stamp 0.6s cubic-bezier(0.2, 1.4, 0.4, 1) 0.3s backwards;
     }
-
     @keyframes stamp {
       from { transform: scale(0.4); box-shadow: 0 0 0 12px #c9a24b40; }
       to { transform: scale(1); box-shadow: 0 0 0 5px #c9a24b26; }
     }
-
     .lifecycle .lbl {
-      display: block;
-      margin-top: 8px;
-      font-family: var(--font-mono);
-      font-size: 0.7rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--faint);
+      display: block; margin-top: 8px; font-family: var(--font-mono);
+      font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted);
     }
-
-    .lifecycle li.done .lbl { color: var(--muted); }
     .lifecycle li.current .lbl { color: var(--brass); }
 
-    .branch-note {
-      margin: 12px 0 0;
-      padding: 10px 14px;
-      border-radius: 9px;
-      font-size: 0.86rem;
-      border: 1px dashed;
+    .kv { margin: 14px 0 0; }
+    .kv div {
+      display: flex; justify-content: space-between; gap: 16px;
+      padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 0.85rem;
+    }
+    .kv div:last-child { border-bottom: none; }
+    .kv dt { color: var(--muted); }
+    .kv dd { margin: 0; font-family: var(--font-mono); font-size: 0.79rem; }
+
+    .badge {
+      display: inline-block; font-family: var(--font-mono); font-size: 0.7rem;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 3px 12px; border-radius: 999px;
+      color: var(--steel); border: 1px solid #4a6a8a; background: #7fa6c914;
     }
 
-    .branch-note.disputed { color: var(--wax); border-color: #7e352a; background: #c0523f0d; }
-    .branch-note.refunded { color: var(--stone); border-color: #565b63; background: #8a8f980d; }
+    .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 26px; }
+    .chip {
+      font-family: var(--font-mono); font-size: 0.74rem; color: var(--muted);
+      border: 1px solid var(--line); border-radius: 999px; padding: 5px 14px;
+    }
+    .chip b { color: var(--brass); font-weight: 500; }
 
-    /* ---------- detail list ---------- */
-    .details { margin: 14px 0 0; }
-    .details div {
-      display: flex;
-      justify-content: space-between;
-      gap: 16px;
-      padding: 7px 0;
+    /* ---------- chains ---------- */
+    .chains {
+      border-top: 1px solid var(--line);
       border-bottom: 1px solid var(--line);
-      font-size: 0.86rem;
+      padding: 16px 0;
+      display: flex; gap: 10px 28px; flex-wrap: wrap; align-items: center;
+      font-family: var(--font-mono); font-size: 0.8rem; color: var(--faint);
     }
+    .chains b { color: var(--muted); font-weight: 400; letter-spacing: 0.14em; font-size: 0.7rem; }
 
-    .details div:last-child { border-bottom: none; }
-    .details dt { color: var(--muted); flex: none; }
-    .details dd { margin: 0; font-family: var(--font-mono); font-size: 0.8rem; text-align: right; overflow-wrap: anywhere; }
-
-    .empty { color: var(--faint); font-size: 0.88rem; margin: 8px 0 0; }
-
-    /* ---------- toast ---------- */
-    #toast {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      max-width: 380px;
-      padding: 13px 18px;
-      border-radius: 10px;
-      font-size: 0.88rem;
-      display: none;
-      z-index: 999;
-      border: 1px solid;
-      animation: rise 0.25s ease;
+    /* ---------- sections ---------- */
+    section.block { padding: 64px 0 8px; }
+    section.block h2 {
+      font-family: var(--font-display); font-weight: 650;
+      font-size: clamp(1.6rem, 3vw, 2.2rem); line-height: 1.1; margin: 10px 0 12px;
     }
+    section.block .standfirst { color: var(--muted); max-width: 38rem; margin: 0 0 30px; }
 
-    @keyframes rise {
-      from { transform: translateY(10px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .step {
+      background: linear-gradient(180deg, var(--panel-soft), var(--panel));
+      border: 1px solid var(--line); border-radius: var(--radius); padding: 22px;
     }
+    .step .n { font-family: var(--font-mono); color: var(--brass); font-size: 0.78rem; letter-spacing: 0.14em; }
+    .step h3 { margin: 8px 0 8px; font-size: 1.02rem; }
+    .step p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+    .step p code { font-family: var(--font-mono); font-size: 0.8rem; color: var(--bone); }
 
-    #toast.success { background: #12291d; color: var(--mint); border-color: #3f7a58; }
-    #toast.error { background: #2b1512; color: #e08a7a; border-color: #7e352a; }
+    .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .feature {
+      border: 1px solid var(--line); border-radius: var(--radius);
+      padding: 22px; background: var(--ink-deep);
+    }
+    .feature h3 { margin: 0 0 8px; font-size: 0.98rem; }
+    .feature h3 .tick { color: var(--sage); margin-right: 8px; }
+    .feature p { margin: 0; color: var(--muted); font-size: 0.88rem; }
+
+    .security {
+      border: 1px solid var(--line); border-radius: var(--radius);
+      background: linear-gradient(180deg, var(--panel-soft), var(--panel));
+      padding: 26px 28px; margin-top: 8px;
+    }
+    .security ul { margin: 14px 0 0; padding: 0; list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 10px 28px; }
+    .security li { color: var(--muted); font-size: 0.9rem; padding-left: 22px; position: relative; }
+    .security li::before { content: "◆"; position: absolute; left: 0; color: var(--brass-deep); font-size: 0.7rem; top: 4px; }
+    .security li b { color: var(--bone); font-weight: 500; }
+
+    /* ---------- closing CTA ---------- */
+    .closer {
+      margin-top: 64px; text-align: center;
+      border: 1px solid var(--line-brass, #5c5138); border-radius: 18px;
+      padding: 56px 24px;
+      background: radial-gradient(600px 220px at 50% 0%, #2a2417 0%, var(--panel) 65%);
+    }
+    .closer h2 {
+      font-family: var(--font-display); font-weight: 650;
+      font-size: clamp(1.8rem, 3.6vw, 2.6rem); margin: 0 0 12px;
+    }
+    .closer h2 em { font-style: normal; color: var(--brass); }
+    .closer p { color: var(--muted); margin: 0 0 26px; }
+    .closer .microcopy { margin-top: 16px; }
 
     footer {
-      margin-top: 28px;
-      padding-top: 16px;
-      border-top: 1px solid var(--line);
-      color: var(--faint);
-      font-size: 0.78rem;
-      font-family: var(--font-mono);
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
+      margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--line);
+      color: var(--faint); font-size: 0.78rem; font-family: var(--font-mono);
+      display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
     }
+    footer a { color: var(--muted); text-decoration: none; }
+    footer a:hover { color: var(--brass); }
 
-    @media (max-width: 880px) {
-      .span-7, .span-5 { grid-column: span 12; }
-      .row-2 { grid-template-columns: 1fr; }
-      .wordmark { font-size: 1.6rem; }
-      .wrap { padding: 22px 16px 48px; }
+    @media (max-width: 900px) {
+      .hero { grid-template-columns: 1fr; padding: 48px 0 40px; }
+      .steps, .features { grid-template-columns: 1fr; }
+      .security ul { grid-template-columns: 1fr; }
+      .nav-links { display: none; }
+      .wrap { padding: 0 16px 48px; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -347,8 +285,8 @@
 </head>
 <body>
   <div class="wrap">
-    <header class="masthead">
-      <div class="brand">
+    <nav class="nav" aria-label="Site">
+      <a class="brand" href="./">
         <svg class="seal" viewBox="0 0 52 52" aria-hidden="true">
           <circle cx="26" cy="26" r="24" fill="none" stroke="#c9a24b" stroke-width="2"/>
           <circle cx="26" cy="26" r="18.5" fill="none" stroke="#5c5138" stroke-width="1"/>
@@ -357,324 +295,134 @@
           <path d="M41.6 34.6 A18 18 0 0 1 26 44" fill="none" stroke="#ece4d1" stroke-width="3.5" stroke-linecap="round" opacity="0.85"/>
           <circle cx="26" cy="26" r="4.5" fill="#c9a24b"/>
         </svg>
-        <div>
-          <h1 class="wordmark">Escrow <em>Ledger</em></h1>
-          <p class="tagline">Three parties. One seal. Settlement without trust.</p>
-        </div>
+        <b>Escrow <em>Ledger</em></b>
+      </a>
+      <div class="nav-links">
+        <a href="#how">How it works</a>
+        <a href="#features">Features</a>
+        <a href="#security">Security</a>
+        <a href="https://github.com/Parithosh-Varma/escrow">GitHub</a>
       </div>
-      <button class="btn-primary connect" onclick="init()">Connect wallet</button>
+      <a class="btn btn-primary" data-carry-contract href="./app.html">Launch app</a>
+    </nav>
+
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Trustless escrow · EVM chains</p>
+        <h1>Settlement <em>without</em> trust.</h1>
+        <p class="lede">Escrow Ledger locks <b>ETH and ERC-20</b> in a smart contract until buyer and seller both confirm — or a neutral arbiter decides. No middlemen. No frozen funds. Every state change sealed on-chain.</p>
+        <div class="cta-row">
+          <a class="btn btn-primary" data-carry-contract href="./app.html">Launch app</a>
+          <a class="btn btn-ghost" href="https://github.com/Parithosh-Varma/escrow">Read the code</a>
+        </div>
+        <p class="microcopy">connect a wallet · point at a deployed contract · trade</p>
+      </div>
+      <div class="sealed" aria-label="Example sealed escrow">
+        <h3>Escrow #0042</h3>
+        <p class="sub">0x7f3a…9c1e → 0xb21d…44aa</p>
+        <ol class="lifecycle">
+          <li><span class="pip"></span><span class="lbl">Pending</span></li>
+          <li class="current"><span class="pip"></span><span class="lbl">Funded</span></li>
+          <li><span class="pip"></span><span class="lbl">Completed</span></li>
+        </ol>
+        <dl class="kv">
+          <div><dt>Amount</dt><dd>10 ETH</dd></div>
+          <div><dt>Status</dt><dd><span class="badge">Funded</span></dd></div>
+          <div><dt>Custody</dt><dd>locked in contract</dd></div>
+        </dl>
+      </div>
     </header>
 
-    <p class="ledger-line">network <b id="network">–</b> · account <b id="account">–</b> · contract <b id="contractAddr">–</b></p>
-
-    <div class="contract-bar">
-      <div class="field">
-        <label for="contractInput">Escrow contract</label>
-        <input id="contractInput" placeholder="0x… deployed address" size="42" spellcheck="false" autocomplete="off" />
-      </div>
-      <button class="btn-ghost" onclick="saveContract()">Use contract</button>
+    <div class="chips" aria-label="Highlights">
+      <span class="chip"><b>39</b> tests passing</span>
+      <span class="chip"><b>0.5–2%</b> fees, success only</span>
+      <span class="chip"><b>ETH + ERC-20</b></span>
+      <span class="chip"><b>3-party</b> dispute resolution</span>
     </div>
-    <p class="hint">Saved on this device. Tip: append <code>?contract=0x…</code> to share a pre-pointed link.</p>
 
-    <main class="grid">
-      <section class="card span-7" aria-labelledby="h-open">
-        <div class="eyebrow">01 · Open</div>
-        <h2 id="h-open">Open an escrow</h2>
-        <p class="desc">Lock the terms on-chain. Funds move in the next step.</p>
-        <div class="field">
-          <label for="seller">Seller address</label>
-          <input id="seller" placeholder="0x…" spellcheck="false" autocomplete="off" />
-        </div>
-        <div class="field">
-          <label for="arbiter">Arbiter address</label>
-          <input id="arbiter" placeholder="0x… neutral third party" spellcheck="false" autocomplete="off" />
-        </div>
-        <div class="row-2">
-          <div class="field">
-            <label for="token">Token address</label>
-            <input id="token" placeholder="0x0 for ETH" value="0x0000000000000000000000000000000000000000" spellcheck="false" autocomplete="off" />
-          </div>
-          <div class="field">
-            <label for="amount">Amount (ETH)</label>
-            <input id="amount" type="number" min="0" step="any" placeholder="10" />
-          </div>
-        </div>
-        <div class="row-2">
-          <div class="field">
-            <label for="expiration">Expires</label>
-            <input id="expiration" type="datetime-local" />
-          </div>
-          <div class="field">
-            <label for="feePercent">Fee (bps, 0 = default)</label>
-            <input id="feePercent" type="number" min="0" placeholder="0" value="0" />
-          </div>
-        </div>
-        <button class="btn-primary" onclick="createEscrow()">Create escrow</button>
-      </section>
+    <div class="chains" style="margin-top: 26px;">
+      <b>Runs on</b>
+      <span>Ethereum</span><span>Polygon</span><span>Arbitrum</span><span>Optimism</span><span>any EVM chain</span>
+    </div>
 
-      <section class="card span-5" aria-labelledby="h-fund">
-        <div class="eyebrow">02 · Fund</div>
-        <h2 id="h-fund">Deposit funds</h2>
-        <p class="desc">The buyer locks the agreed amount into the escrow.</p>
-        <div class="field">
-          <label for="depositId">Escrow ID</label>
-          <input id="depositId" type="number" min="0" placeholder="0" />
+    <section class="block" id="how">
+      <p class="eyebrow">How it works</p>
+      <h2>Three steps. Zero trust required.</h2>
+      <p class="standfirst">The lifecycle is the product: open the terms, lock the funds, then settle — with a neutral third party on standby the whole way.</p>
+      <div class="steps">
+        <div class="step">
+          <div class="n">01 · Open</div>
+          <h3>Agree the terms</h3>
+          <p>The buyer names a seller, a whitelisted arbiter, an amount, and an expiry. The terms are sealed on-chain as <code>Pending</code>.</p>
         </div>
-        <button class="btn-primary" onclick="deposit()">Deposit</button>
-      </section>
+        <div class="step">
+          <div class="n">02 · Fund</div>
+          <h3>Lock the funds</h3>
+          <p>The buyer deposits ETH or ERC-20. The contract holds it — neither side can touch it — and the escrow becomes <code>Funded</code>.</p>
+        </div>
+        <div class="step">
+          <div class="n">03 · Settle</div>
+          <h3>Release or resolve</h3>
+          <p>Both sides confirm and the seller is paid. Disagree? Either side opens a dispute for the arbiter. Expired? The buyer reclaims.</p>
+        </div>
+      </div>
+    </section>
 
-      <section class="card span-7" aria-labelledby="h-settle">
-        <div class="eyebrow">03 · Settle or dispute</div>
-        <h2 id="h-settle">Settle the escrow</h2>
-        <p class="desc">Both sides confirm to release — or either side opens a dispute for the arbiter.</p>
-        <div class="field">
-          <label for="actionId">Escrow ID</label>
-          <input id="actionId" type="number" min="0" placeholder="0" />
-        </div>
-        <div class="actions">
-          <button class="btn-ghost" onclick="confirmBuyer()">Confirm · buyer</button>
-          <button class="btn-ghost" onclick="confirmSeller()">Confirm · seller</button>
-          <button class="btn-primary" onclick="releaseFunds()">Release</button>
-          <button class="btn-wax-ghost" onclick="openDispute()">Open dispute</button>
-          <button class="btn-ghost" onclick="resolveDisputeSeller()">Resolve → seller</button>
-          <button class="btn-ghost" onclick="resolveDisputeBuyer()">Resolve → refund</button>
-          <button class="btn-ghost" onclick="requestRefund()">Request refund</button>
-        </div>
-      </section>
+    <section class="block" id="features">
+      <p class="eyebrow">Features</p>
+      <h2>Built for adversarial conditions.</h2>
+      <p class="standfirst">Every mechanism assumes someone will misbehave — and keeps the funds safe when they do.</p>
+      <div class="features">
+        <div class="feature"><h3><span class="tick">◆</span>Multi-token</h3><p>Native ETH and any ERC-20, with batch create and batch deposit in a single transaction.</p></div>
+        <div class="feature"><h3><span class="tick">◆</span>Two-key release</h3><p>Funds move only when buyer and seller both confirm — no unilateral withdrawals, ever.</p></div>
+        <div class="feature"><h3><span class="tick">◆</span>Dispute resolution</h3><p>Whitelisted arbiters with reputation tracking, a 24-hour cooldown, and max 3 disputes per escrow.</p></div>
+        <div class="feature"><h3><span class="tick">◆</span>Timeout refunds</h3><p>An expiry on every escrow. If the deal stalls, the buyer reclaims — funds can never lock forever.</p></div>
+        <div class="feature"><h3><span class="tick">◆</span>Honest fees</h3><p>Configurable 0.5–2%, taken only on successful settlement. Disputes and refunds cost nothing extra.</p></div>
+        <div class="feature"><h3><span class="tick">◆</span>Safety rails</h3><p>Emergency pause with admin withdrawal, full event history for off-chain indexing, real-time UI updates.</p></div>
+      </div>
+    </section>
 
-      <section class="card span-5" aria-labelledby="h-lookup">
-        <div class="eyebrow">Ledger lookup</div>
-        <h2 id="h-lookup">Inspect an escrow</h2>
-        <p class="desc">Read the current state straight from the chain.</p>
-        <div class="field">
-          <label for="queryId">Escrow ID</label>
-          <input id="queryId" type="number" min="0" placeholder="0" />
-        </div>
-        <button class="btn-primary" onclick="queryEscrow()">Look up</button>
-        <div id="escrowInfo"><p class="empty">No escrow inspected yet.</p></div>
-      </section>
-    </main>
+    <section class="block" id="security">
+      <p class="eyebrow">Security</p>
+      <h2>Audited patterns, tested behavior.</h2>
+      <p class="standfirst">39 Hardhat tests cover deployment, registry, escrow flow, disputes, refunds, batch ops, pause, access control, and attack scenarios.</p>
+      <div class="security">
+        <ul>
+          <li><b>ReentrancyGuard</b> on every fund-moving function</li>
+          <li><b>Checks-effects-interactions</b> before external calls</li>
+          <li><b>SafeERC20</b> wrappers on all token transfers</li>
+          <li><b>Role-based access</b> — admin, buyer, seller, arbiter</li>
+          <li><b>Zero-address and bounds validation</b> on all inputs</li>
+          <li><b>Solidity 0.8+</b> built-in overflow protection</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="closer">
+      <p class="eyebrow">Begin</p>
+      <h2>Ready to seal a <em>deal?</em></h2>
+      <p>Open the console, point it at a deployed contract, and settle without trust.</p>
+      <a class="btn btn-primary" data-carry-contract href="./app.html">Launch app</a>
+      <p class="microcopy">tip: share a pre-pointed link with ?contract=0x…</p>
+    </section>
 
     <footer>
-      <span>sealed on-chain · eth &amp; erc-20</span>
-      <span>buyer · seller · arbiter</span>
+      <span>escrow ledger · sealed on-chain</span>
+      <span><a href="./app.html">console</a> · <a href="https://github.com/Parithosh-Varma/escrow">github</a> · mit © parithosh varma</span>
     </footer>
   </div>
 
-  <div id="toast" role="status" aria-live="polite"></div>
-
-  <script src="https://cdn.jsdelivr.net/npm/ethers@6/dist/ethers.min.js"></script>
   <script>
-    const CONTRACT_PLACEHOLDER = "YOUR_DEPLOYED_ADDRESS";
-    const _qs = new URLSearchParams(location.search);
-    let CONTRACT_ADDRESS = localStorage.getItem("escrow.contract") || _qs.get("contract") || CONTRACT_PLACEHOLDER;
-    if (_qs.get("contract")) localStorage.setItem("escrow.contract", CONTRACT_ADDRESS);
-    let CONTRACT_ABI = [];
-    let signer, contract;
-
-    async function loadAbi() {
-      try {
-        const r = await fetch("./DecentralizedEscrowABI.json", { cache: "no-cache" });
-        if (r.ok) { const j = await r.json(); if (Array.isArray(j)) CONTRACT_ABI = j; }
-      } catch (e) { console.warn("ABI load failed", e); }
-    }
-
-    function showToast(msg, type="success") {
-      const t = document.getElementById("toast");
-      t.textContent = msg; t.className = type; t.style.display = "block";
-      clearTimeout(showToast._t);
-      showToast._t = setTimeout(() => t.style.display = "none", 4200);
-    }
-
-    function handleError(e) {
-      const msg = e?.reason || e?.message || String(e);
-      showToast(msg, "error");
-      console.error(e);
-    }
-
-    async function init() {
-      try {
-        if (!window.ethereum) return showToast("Install MetaMask", "error");
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        signer = await provider.getSigner();
-        await loadAbi();
-        document.getElementById("account").textContent = await signer.getAddress();
-        document.getElementById("network").textContent = (await provider.getNetwork()).name;
-        syncContractInput();
-        if (CONTRACT_ADDRESS === CONTRACT_PLACEHOLDER) {
-          document.getElementById("contractAddr").textContent = "not set";
-          return showToast("Set the escrow contract below (or ?contract=0x…)", "error");
-        }
-        contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-        document.getElementById("contractAddr").textContent = CONTRACT_ADDRESS.slice(0, 10) + "…";
-        showToast("Wallet connected");
-      } catch (e) { handleError(e); }
-    }
-
-    function syncContractInput() {
-      const el = document.getElementById("contractInput");
-      if (el && CONTRACT_ADDRESS !== CONTRACT_PLACEHOLDER) el.value = CONTRACT_ADDRESS;
-    }
-
-    async function saveContract() {
-      const v = document.getElementById("contractInput").value.trim();
-      if (!/^0x[0-9a-fA-F]{40}$/.test(v)) return showToast("Invalid contract address", "error");
-      CONTRACT_ADDRESS = v;
-      localStorage.setItem("escrow.contract", v);
-      showToast("Contract saved — reconnecting…");
-      await init();
-    }
-
-    function needContract() {
-      if (!contract) { showToast("Connect wallet and set the contract address first", "error"); return false; }
-      return true;
-    }
-
-    init();
-
-    async function createEscrow() {
-      try {
-        if (!needContract()) return;
-        const seller = document.getElementById("seller").value.trim();
-        const arbiter = document.getElementById("arbiter").value.trim();
-        const token = document.getElementById("token").value.trim();
-        const amountRaw = document.getElementById("amount").value;
-        if (!amountRaw || Number(amountRaw) <= 0) return showToast("Enter an amount above zero", "error");
-        const amount = ethers.parseEther(amountRaw);
-        const expMs = new Date(document.getElementById("expiration").value).getTime();
-        if (!Number.isFinite(expMs)) return showToast("Choose an expiration date and time", "error");
-        const expiration = Math.floor(expMs / 1000);
-        const feePercent = parseInt(document.getElementById("feePercent").value || "0", 10);
-        const tx = await contract.createEscrow(seller, arbiter, token, amount, expiration, feePercent);
-        await tx.wait();
-        showToast("Escrow created · " + tx.hash.slice(0, 10) + "…");
-      } catch (e) { handleError(e); }
-    }
-
-    async function deposit() {
-      try {
-        if (!needContract()) return;
-        const id = document.getElementById("depositId").value;
-        const escrow = await contract.escrows(id);
-        const tx = await contract.deposit(id, { value: escrow.amount });
-        await tx.wait();
-        showToast("Deposited · " + tx.hash.slice(0, 10) + "…");
-      } catch (e) { handleError(e); }
-    }
-
-    async function confirmBuyer() {
-      try {
-        if (!needContract()) return;
-        const id = document.getElementById("actionId").value;
-        const tx = await contract.confirmByBuyer(id);
-        await tx.wait();
-        showToast("Confirmed by buyer");
-      } catch (e) { handleError(e); }
-    }
-
-    async function confirmSeller() {
-      try {
-        if (!needContract()) return;
-        const id = document.getElementById("actionId").value;
-        const tx = await contract.confirmBySeller(id);
-        await tx.wait();
-        showToast("Confirmed by seller");
-      } catch (e) { handleError(e); }
-    }
-
-    async function releaseFunds() {
-      try {
-        if (!needContract()) return;
-        const id = document.getElementById("actionId").value;
-        const tx = await contract.release(id);
-        await tx.wait();
-        showToast("Released");
-      } catch (e) { handleError(e); }
-    }
-
-    async function openDispute() {
-      try {
-        if (!needContract()) return;
-        const id = document.getElementById("actionId").value;
-        const tx = await contract.openDispute(id);
-        await tx.wait();
-        showToast("Dispute opened");
-      } catch (e) { handleError(e); }
-    }
-
-    async function resolveDisputeSeller() {
-      try {
-        if (!needContract()) return;
-        const id = document.getElementById("actionId").value;
-        const tx = await contract.resolveDispute(id, 2);
-        await tx.wait();
-        showToast("Resolved to seller");
-      } catch (e) { handleError(e); }
-    }
-
-    async function resolveDisputeBuyer() {
-      try {
-        if (!needContract()) return;
-        const id = document.getElementById("actionId").value;
-        const tx = await contract.resolveDispute(id, 4);
-        await tx.wait();
-        showToast("Resolved to refund");
-      } catch (e) { handleError(e); }
-    }
-
-    async function requestRefund() {
-      try {
-        if (!needContract()) return;
-        const id = document.getElementById("actionId").value;
-        const tx = await contract.requestRefund(id);
-        await tx.wait();
-        showToast("Refunded");
-      } catch (e) { handleError(e); }
-    }
-
-    const STATUS = ["Pending", "Funded", "Completed", "Disputed", "Refunded"];
-
-    function escrowHTML(e) {
-      const status = Number(e.status);
-      const locked = status === 0 || status === 1 || status === 3;
-      const path = ["Pending", "Funded", "Completed"].map((name, i) => {
-        const cls = status <= 2
-          ? (i < status ? "done" : i === status ? "current" : "todo")
-          : (i < 2 ? "done" : "todo");
-        return `<li class="${cls}"><span class="pip"></span><span class="lbl">${name}</span></li>`;
-      }).join("");
-      const branch = status === 3
-        ? `<p class="branch-note disputed">Disputed — funds stay locked until the arbiter resolves.</p>`
-        : status === 4
-          ? `<p class="branch-note refunded">Refunded — funds returned to the buyer.</p>`
-          : "";
-      const check = (v) => v ? "yes" : "not yet";
-      const row = (k, v) => `<div><dt>${k}</dt><dd>${v}</dd></div>`;
-      return `
-        <ol class="lifecycle" aria-label="Escrow lifecycle, currently ${STATUS[status]}">${path}</ol>
-        ${branch}
-        <dl class="details">
-          ${row("Status", `<span class="badge badge-${STATUS[status].toLowerCase()}">${STATUS[status]}</span>`)}
-          ${row("Amount", `${ethers.formatEther(e.amount)} ETH`)}
-          ${row("Buyer", e.buyer)}
-          ${row("Seller", e.seller)}
-          ${row("Arbiter", e.arbiter)}
-          ${row("Token", e.token)}
-          ${row("Buyer confirmed", check(e.buyerConfirmed))}
-          ${row("Seller confirmed", check(e.sellerConfirmed))}
-          ${row("Expires", new Date(Number(e.expiration) * 1000).toLocaleString())}
-          ${locked ? row("Custody", "locked in contract") : ""}
-        </dl>`;
-    }
-
-    async function queryEscrow() {
-      try {
-        if (!needContract()) return;
-        const id = document.getElementById("queryId").value;
-        const e = await contract.escrows(id);
-        document.getElementById("escrowInfo").innerHTML = escrowHTML(e);
-      } catch (e) { handleError(e); }
-    }
+    // Carry ?contract= through to the console so shared links stay pointed.
+    (function () {
+      const c = new URLSearchParams(location.search).get("contract");
+      if (!c) return;
+      document.querySelectorAll("a[data-carry-contract]").forEach((a) => {
+        const u = new URL(a.getAttribute("href"), location.href);
+        u.searchParams.set("contract", c);
+        a.setAttribute("href", u.pathname + u.search);
+      });
+    })();
   </script>
 </body>
 </html>
