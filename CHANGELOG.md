@@ -2,6 +2,20 @@
 
 All notable changes to the Decentralized Escrow System are documented here.
 
+## [1.2.0] - 2026-09-18
+
+### Added
+- Moved Foundry contracts to separate `foundry/` directory to avoid Hardhat compilation conflicts
+- Improved Hardhat configuration for better Node 24 compatibility
+
+### Changed
+- Updated dependency versions for security patches
+- Improved project structure for better separation of concerns
+
+### Fixed
+- Resolved Hardhat compilation issues with Foundry contracts
+- Fixed peer dependency conflicts in package.json
+
 ## [1.1.0] - 2026-08-25
 
 ### Added
